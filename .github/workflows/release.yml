@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      token: write # OIDC for PyPi Trusted Publisher feature
+      id-token: write # OIDC for PyPi Trusted Publisher feature
     outputs:
       RELEASE_VERSION: ${{ steps.release_version.outputs.RELEASE_VERSION }}
     env:
