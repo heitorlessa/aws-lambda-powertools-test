@@ -52,6 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      token: write # OIDC for PyPi Trusted Publisher feature
     outputs:
       RELEASE_VERSION: ${{ steps.release_version.outputs.RELEASE_VERSION }}
     env:
@@ -92,12 +93,10 @@ jobs:
       - name: Build python package and wheel
         if: ${{ !inputs.skip_pypi }}
         run: poetry build
-      - name: Upload to PyPi test
-        if: ${{ !inputs.skip_pypi }}
-        run: make release-test
-        env:
-          PYPI_USERNAME: __token__
-          PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@0bf742be3ebe032c25dd15117957dc15d0cfc38d # v1.8.5
+        with:
+          repository-url: https://test.pypi.org/legacy/
       - name: Update version in trunk
         if: steps.versioning.outcome == 'success'
         run: |
@@ -109,7 +108,11 @@ jobs:
           git push origin HEAD:refs/heads/"${BRANCH}"
 
 # NOTE: Tasks
-# - [ ] Update Makefile target
-# - [ ] Use new pypa publishing action pinned
-# - [ ] Test publishing to test without token
+# - [x] Use new pypa publishing action pinned
+# - [x] Test publishing to test without token
 # - [ ] Separate build for signing vs publishing
+# - [ ] Make permissions stricter: build, signing
+
+# Unrelated and optional but useful tasks we have to do anyway
+# - [ ] Create PR from Action instead of pushing (this will be the base for other related tasks like changelog)
+
