@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write # OIDC for PyPi Trusted Publisher feature
-      # NOTE: try enabling contents: write + upload signing artifacts to learn the process
+      contents: write # upload signing artifacts to be verified later more easily by customers
     steps:
       - uses: actions/checkout@v3
       - name: Restore build artifact from cache
@@ -128,6 +128,8 @@ jobs:
       - name: Sign build
         uses: sigstore/gh-action-sigstore-python@e323e1b02e26cc6600843935562c862b94200b0c # v1.2.3
         with:
+          upload-signing-artifacts: true
+          release-signing-artifacts: true
           inputs: |
             "dist/aws_lambda_powertools-${RELEASE_VERSION}.tar.gz"
             "dist/aws_lambda_powertools-${RELEASE_VERSION}*.whl"
@@ -160,3 +162,6 @@ jobs:
 # Unrelated and optional but useful tasks we have to do anyway
 # - [ ] Create PR from Action instead of pushing (this will be the base for other related tasks like changelog)
 
+# TODO: Save signing and provenance in the GitHub Release itself
+## We might get in trouble due to our Release Drafter (what if it runs?)
+## https://sethmlarson.dev/python-and-slsa
