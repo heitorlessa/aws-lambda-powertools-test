@@ -163,7 +163,3 @@ jobs:
 
 # Unrelated and optional but useful tasks we have to do anyway
 # - [ ] Create PR from Action instead of pushing (this will be the base for other related tasks like changelog)
-
-# TODO: Save signing and provenance in the GitHub Release itself
-## We might get in trouble due to our Release Drafter (what if it runs?)
-## https://sethmlarson.dev/python-and-slsa
