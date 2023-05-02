@@ -21,7 +21,7 @@ name: Release
 
 env:
   BRANCH: develop
-  ORIGIN: awslabs/aws-lambda-powertools-python
+  ORIGIN: heitorlessa/aws-lambda-powertools-python-test
 
 on:
   workflow_dispatch:
@@ -49,7 +49,7 @@ on:
 jobs:
   release:
     environment: release
-    runs-on: aws-lambda-powertools_ubuntu-latest_4-core
+    runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
@@ -92,19 +92,12 @@ jobs:
       - name: Build python package and wheel
         if: ${{ !inputs.skip_pypi }}
         run: poetry build
-      # March 1st: PyPi test is under maintenance....
-      # - name: Upload to PyPi test
-      #   if: ${{ !inputs.skip_pypi }}
-      #   run: make release-test
-      #   env:
-      #     PYPI_USERNAME: __token__
-      #     PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
-      - name: Upload to PyPi prod
+      - name: Upload to PyPi test
         if: ${{ !inputs.skip_pypi }}
-        run: make release-prod
+        run: make release-test
         env:
           PYPI_USERNAME: __token__
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
       - name: Update version in trunk
         if: steps.versioning.outcome == 'success'
         run: |
@@ -115,42 +108,8 @@ jobs:
           git pull origin "${BRANCH}" # prevents concurrent branch update failing push
           git push origin HEAD:refs/heads/"${BRANCH}"
 
-  changelog:
-    needs: release
-    permissions:
-      contents: write
-    uses: ./.github/workflows/reusable_publish_changelog.yml
-
-  # NOTE: Watch out for the depth limit of 4 nested workflow_calls.
-  # publish_layer -> publish_v2_layer -> reusable_deploy_v2_layer_stack -> reusable_update_v2_layer_arn_docs
-  publish_layer:
-    needs: release
-    secrets: inherit
-    permissions:
-      id-token: write
-      contents: write
-      pages: write
-    uses: ./.github/workflows/publish_v2_layer.yml
-    with:
-      latest_published_version: ${{ needs.release.outputs.RELEASE_VERSION }}
-      pre_release: ${{ inputs.pre_release }}
-
-  post_release:
-    needs: [release, publish_layer]
-    permissions:
-      contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-    runs-on: ubuntu-latest
-    env:
-      RELEASE_VERSION: ${{ needs.release.outputs.RELEASE_VERSION }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Close issues related to this release
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const post_release = require('.github/scripts/post_release.js')
-            await post_release({github, context, core})
+# NOTE: Tasks
+# - [ ] Update Makefile target
+# - [ ] Use new pypa publishing action pinned
+# - [ ] Test publishing to test without token
+# - [ ] Separate build for signing vs publishing
