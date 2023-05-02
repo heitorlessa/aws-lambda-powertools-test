@@ -126,7 +126,7 @@ jobs:
           key: ${{ runner.os}}-${{ hashFiles('**/poetry.lock')}}
 
       - name: Sign build
-        uses: sigstore/gh-action-sigstore-python@https://github.com/sigstore/gh-action-sigstore-python/commit/e323e1b02e26cc6600843935562c862b94200b0c # v1.2.3
+        uses: sigstore/gh-action-sigstore-python@e323e1b02e26cc6600843935562c862b94200b0c # v1.2.3
         with:
           inputs: |
             "dist/aws_lambda_powertools-${RELEASE_VERSION}.tar.gz"
@@ -154,7 +154,7 @@ jobs:
 # NOTE: Tasks
 # - [x] Use new pypa publishing action pinned
 # - [x] Test publishing to test without token
-# - [ ] Separate build for signing vs publishing
+# - [x] Separate build for signing vs publishing
 # - [ ] Make permissions stricter: build, signing
 
 # Unrelated and optional but useful tasks we have to do anyway
