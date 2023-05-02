@@ -129,7 +129,6 @@ jobs:
         uses: sigstore/gh-action-sigstore-python@e323e1b02e26cc6600843935562c862b94200b0c # v1.2.3
         with:
           upload-signing-artifacts: true
-          release-signing-artifacts: true
           inputs: |
             "dist/aws_lambda_powertools-${RELEASE_VERSION}.tar.gz"
             "dist/aws_lambda_powertools-${RELEASE_VERSION}*.whl"
@@ -157,7 +156,10 @@ jobs:
 # - [x] Use new pypa publishing action pinned
 # - [x] Test publishing to test without token
 # - [x] Separate build for signing vs publishing
-# - [ ] Make permissions stricter: build, signing
+# - [x] Make permissions stricter: build, signing
+# - [ ] Create Git tag as part of release
+# - [ ] Upload signing artifacts as part of release to ease verifying signature
+# - [ ] Verify whether Release Drafter removes signing artifacts from last draft release after a release run completes
 
 # Unrelated and optional but useful tasks we have to do anyway
 # - [ ] Create PR from Action instead of pushing (this will be the base for other related tasks like changelog)
