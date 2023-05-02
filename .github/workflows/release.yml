@@ -47,7 +47,7 @@ on:
         required: false
 
 jobs:
-  signing:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -109,6 +109,29 @@ jobs:
           git pull origin "${BRANCH}" # prevents concurrent branch update failing push
           git push origin HEAD:refs/heads/"${BRANCH}"
 
+  signing:
+    needs: build
+    environment: release
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC for PyPi Trusted Publisher feature
+      # NOTE: try enabling contents: write + upload signing artifacts to learn the process
+    steps:
+      - uses: actions/checkout@v3
+      - name: Restore build artifact from cache
+        id: restore-release-build
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        with:
+          path: dist/
+          key: ${{ runner.os}}-${{ hashFiles('**/poetry.lock')}}
+
+      - name: Sign build
+        uses: sigstore/gh-action-sigstore-python@https://github.com/sigstore/gh-action-sigstore-python/commit/e323e1b02e26cc6600843935562c862b94200b0c # v1.2.3
+        with:
+          inputs: |
+            "dist/aws_lambda_powertools-${RELEASE_VERSION}.tar.gz"
+            "dist/aws_lambda_powertools-${RELEASE_VERSION}*.whl"
+
   release:
     needs: signing
     environment: release
@@ -117,7 +140,7 @@ jobs:
       id-token: write # OIDC for PyPi Trusted Publisher feature
     steps:
       - uses: actions/checkout@v3
-      - name: Restore cache build artifact
+      - name: Restore build artifact from cache
         id: restore-release-build
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
