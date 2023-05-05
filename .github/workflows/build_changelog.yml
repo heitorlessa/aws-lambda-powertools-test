@@ -47,8 +47,8 @@ jobs:
         env:
           COMMIT_MSG: "chore(ci): update changelog with latest changes"
           PR_TITLE: "chore(ci): changelog rebuild"
-          PR_BODY: "This is an automated PR created from an automated workflow"
-          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/${{ github.job }}
+          PR_BODY: "This is an automated PR created from the following workflow"
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
 
