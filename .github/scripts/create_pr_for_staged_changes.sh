@@ -7,7 +7,7 @@ readonly PR_BODY="This is an automated PR created from the following workflow"
 # Sets GitHub Action with error message to ease troubleshooting
 function validation_error() {
     readonly FILENAME=".github/scripts/$(basename $0)"
-    echo "::error file=${FILENAME}::$0"
+    echo "::error file=${FILENAME}::$1"
     exit 1
 }
 
