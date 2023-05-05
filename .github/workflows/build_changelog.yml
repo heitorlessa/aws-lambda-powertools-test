@@ -30,7 +30,7 @@ jobs:
           git pull origin "${BRANCH}"
       - name: "Generate latest changelog"
         run: make changelog
-      - name: Update Changelog in trunk
+      - name: Create PR
         run: |
           HAS_CHANGE=$(git status --porcelain)
           test -z "${HAS_CHANGE}" && echo "Nothing to update" && exit 0
@@ -39,11 +39,10 @@ jobs:
           git add CHANGELOG.md
           git commit -m "${COMMIT_MSG}"
 
-          # git pull origin "${BRANCH}" # prevents concurrent branch update failing push
           git push origin "${TEMP_BRANCH}"
 
+          gh pr aoakdokaaksdoakodask
           gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}"
-          # gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}" --head "${TEMP_BRANCH}"
         env:
           COMMIT_MSG: "chore(ci): update changelog with latest changes"
           PR_TITLE: "chore(ci): changelog rebuild"
@@ -51,6 +50,14 @@ jobs:
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
+      - name: Cleanup orphaned branch
+        if: failure()
+        run: |
+          echo Removing orphaned branch: "${TEMP_BRANCH}"
+          git push origin --delete "${TEMP_BRANCH}"
+        env:
+          TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
+
 
   # changelog:
   #   uses: ./.github/workflows/reusable_publish_changelog.yml
