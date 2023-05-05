@@ -31,33 +31,17 @@ jobs:
       - name: "Generate latest changelog"
         run: make changelog
       - name: Create PR
-        run: |
-          HAS_CHANGE=$(git status --porcelain)
-          test -z "${HAS_CHANGE}" && echo "Nothing to update" && exit 0
-          git checkout -b "${TEMP_BRANCH}"
-
-          git add CHANGELOG.md
-          git commit -m "${COMMIT_MSG}"
-
-          git push origin "${TEMP_BRANCH}"
-
-          gh pr aoakdokaaksdoakodask
-          gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}"
+        run: bash .github/scripts/create_pr_for_staged_changes.sh CHANGELOG.md
         env:
-          COMMIT_MSG: "chore(ci): update changelog with latest changes"
-          PR_TITLE: "chore(ci): changelog rebuild"
-          PR_BODY: "This is an automated PR created from the following workflow"
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
+          RUN_ID: ${{ github.run_id }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup orphaned branch
         if: failure()
-        run: |
-          echo Removing orphaned branch: "${TEMP_BRANCH}"
-          git push origin --delete "${TEMP_BRANCH}"
+        run: git push origin --delete "${TEMP_BRANCH}"
         env:
           TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
-
 
   # changelog:
   #   uses: ./.github/workflows/reusable_publish_changelog.yml
