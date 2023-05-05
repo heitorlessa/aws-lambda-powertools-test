@@ -37,6 +37,7 @@ jobs:
           git commit -m "${COMMIT_MSG}"
 
           git pull origin "${BRANCH}" # prevents concurrent branch update failing push
+          git checkout -b "${TEMP_BRANCH}"
           git push --set-upstream origin "${TEMP_BRANCH}"
 
           gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${TEMP_BRANCH}"
