@@ -6,6 +6,10 @@
 
 ## Maintenance
 
+* **ci:** isolate git commands in a script for debuggability
+* **ci:** test orphan branch cleanup
+* **ci:** correct pr body message
+* **ci:** changelog rebuild ([#7](https://github.com/awslabs/aws-lambda-powertools-python/issues/7))
 * **ci:** create a temp branch with action workflow run id take 9
 * **ci:** create a temp branch with action workflow run id take 8
 * **ci:** create a temp branch with action workflow run id take 7
