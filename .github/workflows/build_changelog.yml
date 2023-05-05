@@ -33,12 +33,13 @@ jobs:
         run: |
           HAS_CHANGE=$(git status --porcelain)
           test -z "${HAS_CHANGE}" && echo "Nothing to update" && exit 0
+          git checkout -b "${TEMP_BRANCH}"
+
           git add CHANGELOG.md
           git commit -m "${COMMIT_MSG}"
 
-          git pull origin "${BRANCH}" # prevents concurrent branch update failing push
-          git checkout -b "${TEMP_BRANCH}"
-          git push origin "${TEMP_BRANCH}"
+          # git pull origin "${BRANCH}" # prevents concurrent branch update failing push
+          # git push origin "${TEMP_BRANCH}"
 
           gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}" --head "${TEMP_BRANCH}"
         env:
