@@ -12,6 +12,7 @@ jobs:
   changelog:
     permissions:
       contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     concurrency:
       group: changelog-build
