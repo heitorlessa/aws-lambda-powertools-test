@@ -10,6 +10,8 @@ env:
 
 jobs:
   changelog:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     concurrency:
       group: changelog-build
@@ -42,6 +44,7 @@ jobs:
           PR_TITLE: "chore(ci): changelog rebuild"
           PR_BODY: "This is an automated PR created from an automated workflow"
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # changelog:
   #   uses: ./.github/workflows/reusable_publish_changelog.yml
