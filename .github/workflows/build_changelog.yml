@@ -36,7 +36,7 @@ jobs:
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
           RUN_ID: ${{ github.run_id }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup orphaned branch
         if: failure()
         run: git push origin --delete "${TEMP_BRANCH}"
