@@ -41,7 +41,8 @@ jobs:
           # git pull origin "${BRANCH}" # prevents concurrent branch update failing push
           # git push origin "${TEMP_BRANCH}"
 
-          gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}" --head "${TEMP_BRANCH}"
+          gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}"
+          # gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}" --head "${TEMP_BRANCH}"
         env:
           COMMIT_MSG: "chore(ci): update changelog with latest changes"
           PR_TITLE: "chore(ci): changelog rebuild"
