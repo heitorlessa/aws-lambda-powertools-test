@@ -37,14 +37,16 @@ jobs:
           git commit -m "${COMMIT_MSG}"
 
           git pull origin "${BRANCH}" # prevents concurrent branch update failing push
+          git push origin "${TEMP_BRANCH}"
 
-          gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base develop
+          gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${TEMP_BRANCH}"
         env:
           COMMIT_MSG: "chore(ci): update changelog with latest changes"
           PR_TITLE: "chore(ci): changelog rebuild"
           PR_BODY: "This is an automated PR created from an automated workflow"
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
 
   # changelog:
   #   uses: ./.github/workflows/reusable_publish_changelog.yml
