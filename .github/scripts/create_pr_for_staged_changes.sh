@@ -87,4 +87,4 @@ function main() {
     report_summary
 }
 
-main
+main $@
