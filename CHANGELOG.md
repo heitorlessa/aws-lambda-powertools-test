@@ -6,6 +6,20 @@
 
 ## Maintenance
 
+* **ci:** lint with shellcheck
+* **ci:** make script and workflow reusable
+* **ci:** use bash word expansion over basename
+* **ci:** debug bash string expansion
+* **ci:** fix typos
+* **ci:** trigger changelog on build again
+* **ci:** close duplicate PRs
+* **ci:** test release drafter ([#4](https://github.com/awslabs/aws-lambda-powertools-python/issues/4))
+* **ci:** automate PR creation for changelog take 1
+* **ci:** add gh_token env var for gh cli
+* **ci:** remove intentional failure
+* **ci:** intentionally fail to test err msg take 2
+* **ci:** changelog rebuild:4895407959 ([#9](https://github.com/awslabs/aws-lambda-powertools-python/issues/9))
+* **ci:** intentionally fail to test err msg
 * **ci:** isolate git commands in a script for debuggability
 * **ci:** test orphan branch cleanup
 * **ci:** correct pr body message
@@ -19,10 +33,10 @@
 * **ci:** create a temp branch with action workflow run id take 3
 * **ci:** create a temp branch with action workflow run id take 2
 * **ci:** create a temp branch with action workflow run id
-* **ci:** add gh_token env var for gh cli
-* **ci:** automate PR creation for changelog take 1
-* **ci:** test release drafter ([#4](https://github.com/awslabs/aws-lambda-powertools-python/issues/4))
 * **ci:** update todo for tomorrow
+* **deps-dev:** bump mypy-boto3-cloudwatch from 1.26.99 to 1.26.127 ([#10](https://github.com/awslabs/aws-lambda-powertools-python/issues/10))
+* **deps-dev:** bump mkdocs-material from 9.1.8 to 9.1.9 ([#1](https://github.com/awslabs/aws-lambda-powertools-python/issues/1))
+* **deps-dev:** bump mypy-boto3-s3 from 1.26.116 to 1.26.127 ([#11](https://github.com/awslabs/aws-lambda-powertools-python/issues/11))
 
 
 <a name="v0.1.0"></a>
