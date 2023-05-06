@@ -12,17 +12,22 @@
 #==============================================================================
 
 PR_BODY="This is an automated PR created from the following workflow"
+FILENAME=".github/scripts/$(basename "$0")"
 readonly PR_BODY
+readonly FILENAME
 
 # Sets GitHub Action with error message to ease troubleshooting
 function raise_validation_error() {
-    FILENAME=".github/scripts/$(basename "$0")"
     echo "::error file=${FILENAME}::$1"
     exit 1
 }
 
 function debug() {
     echo "::debug::$1"
+}
+
+function notice() {
+    echo "::notice file=${FILENAME}::$1"
 }
 
 function check_env_vars() {
@@ -72,10 +77,9 @@ function report_summary() {
     debug "Creating job summary"
     echo "### Pull request created successfully! :rocket: #${NEW_PR_ID}. \n\n Closed duplicated PRs (if any): ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
 
-    debug "Creating job outputs"
-    echo "PR_URL=${NEW_PR_URL}" >>"$GITHUB_OUTPUT"
-    echo "PR_BRANCH=${TEMP_BRANCH}" >>"$GITHUB_OUTPUT"
-    echo "PR_DUPLICATES=${DUPLICATE_PRS}" >>"$GITHUB_OUTPUT"
+    notice "PR_URL is ${NEW_PR_URL}"
+    notice "PR_BRANCH is ${TEMP_BRANCH}"
+    notice "PR_DUPLICATES are ${DUPLICATE_PRS}"
 }
 
 function main() {
