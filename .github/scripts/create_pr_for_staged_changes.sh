@@ -75,7 +75,7 @@ function close_duplicate_prs() {
 
 function report_summary() {
     debug "Creating job summary"
-    echo "### Pull request created successfully! :rocket: #${NEW_PR_URL}. <br/><br/> Closed duplicated PRs (if any): ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
+    echo "### Pull request created successfully :rocket: #${NEW_PR_URL} <br/><br/> Closed duplicated PRs (if any): ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
 
     notice "PR_URL is ${NEW_PR_URL}"
     notice "PR_BRANCH is ${TEMP_BRANCH}"
