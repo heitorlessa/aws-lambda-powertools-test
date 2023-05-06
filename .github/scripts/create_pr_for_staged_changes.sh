@@ -11,28 +11,39 @@ function validation_error() {
     exit 1
 }
 
-# Check whether there are any staged changes before continuing
+function debug() {
+    echo "::debug::$1"
+}
+
+debug "Is there an update to changelog?"
 HAS_CHANGE="$(git status --porcelain)"
 test -z "${HAS_CHANGE}" && echo "Nothing to update" && exit 0
 
-# Sanity check
+debug "Do we have required environment variables?"
 test -z "${WORKFLOW_URL}" && validation_error "WORKFLOW_URL env must be set for traceability"
-test -z "${TEMP_BRANCH}" && validation_error "TEMP_BRANCH env must be set in order to create a PR"
-test -z "${RUN_ID}" && validation_error "RUN_ID env must be set to trace GitHub Action Workflow Run ID back to PR"
+test -z "${TEMP_BRANCH}" && validation_error "TEMP_BRANCH env must be set to create a PR"
+test -z "${RUN_ID}" && validation_error "RUN_ID env must be set to trace Workflow Run ID back to PR"
 test -z "${GH_TOKEN}" && validation_error "GH_TOKEN env must be set for GitHub CLI"
 
-echo "::debug::Creating branch ${TEMP_BRANCH}"
+debug "Creating branch ${TEMP_BRANCH}"
 git checkout -b "${TEMP_BRANCH}"
 
-echo "::debug::Committing staged files: $@"
+debug "Committing staged files: $@"
 git add $@
 git commit -m "${COMMIT_MSG}"
 
-echo "::debug::Creating branch remotely"
+debug "Creating branch remotely"
 git push origin "${TEMP_BRANCH}"
 
-echo "::debug::Preparing PR against ${BRANCH} branch"
+debug "Creating PR against ${BRANCH} branch"
+NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH} | basename") # https://github.com/awslabs/aws-lambda-powertools/pull/13
+NEW_PR_ID=$(basename "${PR_URL}")                                                                                   # 13
 
-PR_ID=$(gh pr create --title "${PR_TITLE}":"${RUN_ID}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}")
+debug "Do we have any duplicate PRs?"
+DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number")
 
-echo "### Pull request ${PR_ID} created successfully! :rocket:" >>$GITHUB_STEP_SUMMARY
+debug "Closing duplicated PRs if any"
+echo "${DUPLCATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by ${NEW_PR_ID}"
+
+debug "Creating job summary"
+echo "### Pull request created successfully! :rocket: ${NEW_PR_ID}. Closed duplicated PRs ${DUPLICATE_PRS}" >>$GITHUB_STEP_SUMMARY
