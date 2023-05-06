@@ -11,11 +11,12 @@
 #required_env_vars  :COMMIT_MSG, PR_TITLE, TEMP_BRANCH, GH_TOKEN, RUN_ID, WORKFLOW_URL
 #==============================================================================
 
-readonly PR_BODY="This is an automated PR created from the following workflow"
+PR_BODY="This is an automated PR created from the following workflow"
+readonly PR_BODY
 
 # Sets GitHub Action with error message to ease troubleshooting
 function validation_error() {
-    readonly FILENAME=".github/scripts/$(basename $0)"
+    FILENAME=".github/scripts/$(basename "$0")"
     echo "::error file=${FILENAME}::$1"
     exit 1
 }
@@ -37,8 +38,8 @@ test -z "${GH_TOKEN}" && validation_error "GH_TOKEN env must be set for GitHub C
 debug "Creating branch ${TEMP_BRANCH}"
 git checkout -b "${TEMP_BRANCH}"
 
-debug "Committing staged files: $@"
-git add $@
+debug "Committing staged files: \"$*\""
+git add "$*"
 git commit -m "${COMMIT_MSG}"
 
 debug "Creating branch remotely"
@@ -46,7 +47,7 @@ git push origin "${TEMP_BRANCH}"
 
 debug "Creating PR against ${BRANCH} branch"
 NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}") # https://github.com/awslabs/aws-lambda-powertools/pull/13
-NEW_PR_ID=$(echo "${NEW_PR_URL##*/}")                                                                    # 13
+NEW_PR_ID="${NEW_PR_URL##*/}"                                                                            # 13
 
 debug "Do we have any duplicate PRs?"
 DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number")
@@ -55,7 +56,7 @@ debug "Closing duplicated PRs if any"
 echo "${DUPLICATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by #${NEW_PR_ID}"
 
 debug "Creating job summary"
-echo "### Pull request created successfully! :rocket: #${NEW_PR_ID}. \n\n Closed duplicated PRs (if any): ${DUPLICATE_PRS}" >>$GITHUB_STEP_SUMMARY
+echo "### Pull request created successfully! :rocket: #${NEW_PR_ID}. \n\n Closed duplicated PRs (if any): ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
 
 debug "Creating job outputs"
 echo "PR_URL=${NEW_PR_URL}" >>"$GITHUB_OUTPUT"
