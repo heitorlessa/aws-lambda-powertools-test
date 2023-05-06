@@ -37,7 +37,11 @@ git push origin "${TEMP_BRANCH}"
 
 debug "Creating PR against ${BRANCH} branch"
 NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}") # https://github.com/awslabs/aws-lambda-powertools/pull/13
-NEW_PR_ID=$(basename "${PR_URL}")                                                                        # 13
+
+echo "PR URL: ${NEW_PR_URL}"
+
+NEW_PR_ID=$(basename "${PR_URL}") # 13
+echo "PR ID: ${NEW_PR_ID}"
 
 debug "Do we have any duplicate PRs?"
 DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number")
