@@ -43,8 +43,8 @@ function push_staged_files_to_temp_branch() {
     debug "Creating branch ${TEMP_BRANCH}"
     git checkout -b "${TEMP_BRANCH}"
 
-    debug "Committing staged files: $*"
-    git add $*
+    debug "Committing staged files: $@"
+    git add $@
     git commit -m "${COMMIT_MSG}"
 
     debug "Creating branch remotely"
@@ -80,7 +80,7 @@ function main() {
     check_staged_files
     check_env_vars
 
-    push_staged_files_to_temp_branch $*
+    push_staged_files_to_temp_branch $@
     create_pr
     close_duplicate_prs
 
