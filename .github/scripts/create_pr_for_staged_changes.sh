@@ -36,14 +36,14 @@ debug "Creating branch remotely"
 git push origin "${TEMP_BRANCH}"
 
 debug "Creating PR against ${BRANCH} branch"
-NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH} | basename") # https://github.com/awslabs/aws-lambda-powertools/pull/13
-NEW_PR_ID=$(basename "${PR_URL}")                                                                                   # 13
+NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}") # https://github.com/awslabs/aws-lambda-powertools/pull/13
+NEW_PR_ID=$(basename "${PR_URL}")                                                                        # 13
 
 debug "Do we have any duplicate PRs?"
 DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number")
 
 debug "Closing duplicated PRs if any"
-echo "${DUPLCATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by ${NEW_PR_ID}"
+echo "${DUPLICATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by ${NEW_PR_ID}"
 
 debug "Creating job summary"
 echo "### Pull request created successfully! :rocket: ${NEW_PR_ID}. Closed duplicated PRs ${DUPLICATE_PRS}" >>$GITHUB_STEP_SUMMARY
