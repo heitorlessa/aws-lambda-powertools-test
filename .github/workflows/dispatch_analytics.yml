@@ -23,7 +23,6 @@ permissions:
 
 env:
   ORIGIN: heitorlessa/aws-lambda-powertools-test
-  TEST: test
 
 jobs:
   dispatch_token:
@@ -31,6 +30,7 @@ jobs:
       group: analytics
     runs-on: ubuntu-latest
     environment: analytics
+    if: github.repository == vars.ORIGIN
     steps:
       - name: Debug origin
         run: |
