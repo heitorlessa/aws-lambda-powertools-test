@@ -1,5 +1,5 @@
 #!/bin/bash
-set -uxo pipefail
+set -uxo pipefail # quickest explanation https://gist.github.com/mohanpedala/1e2ff5661761d3abd0385e8223e16425
 #title              :create_pr_for_staged_changes.sh
 #description        :This script will create a PR for staged changes, detect and close duplicate PRs with the same title, and craft a GitHub Actions report at the end.
 #author		        :@heitorlessa
@@ -30,7 +30,7 @@ function notice() {
     echo "::notice file=${FILENAME}::$1"
 }
 
-function check_env_vars() {
+function has_required_config() {
     debug "Do we have required environment variables?"
     test -z "${WORKFLOW_URL}" && raise_validation_error "WORKFLOW_URL env must be set for traceability"
     test -z "${TEMP_BRANCH}" && raise_validation_error "TEMP_BRANCH env must be set to create a PR"
@@ -38,7 +38,7 @@ function check_env_vars() {
     test -z "${GH_TOKEN}" && raise_validation_error "GH_TOKEN env must be set for GitHub CLI"
 }
 
-function check_staged_files() {
+function has_anything_changed() {
     debug "Is there an update to changelog?"
     HAS_CHANGE="$(git status --porcelain)"
     test -z "${HAS_CHANGE}" && echo "Nothing to update" && exit 0
@@ -83,9 +83,12 @@ function report_summary() {
 }
 
 function main() {
+    debug "Incoming event"
+    echo "${GITHUB_EVENT}"
+
     # Sanity check
-    check_staged_files
-    check_env_vars
+    has_anything_changed
+    has_required_config
 
     push_staged_files_to_temp_branch "$@"
     create_pr

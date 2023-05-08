@@ -42,9 +42,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           RUN_ID: ${{ github.run_id }}
+          GITHUB_EVENT: ${{ toJSON(github.event) }}
       - name: Cleanup orphaned branch
         if: failure()
-        run: git push origin --delete "${TEMP_BRANCH}"
+        run: git push origin --delete "${TEMP_BRANCH}" || echo "Must have failed before creating temporary branch; no cleanup needed."
         env:
           TEMP_BRANCH: "ci-changelog-${{ github.run_id}}"
 
