@@ -22,7 +22,7 @@ permissions:
   statuses: read
 
 env:
-  ORIGIN: heitorlessa/aws-lambda-powertools-test
+  ORIGIN: "heitorlessa/aws-lambda-powertools-test"
 
 jobs:
   dispatch_token:
