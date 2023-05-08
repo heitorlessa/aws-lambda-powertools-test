@@ -105,6 +105,7 @@ function main() {
     has_required_config
 
     create_temporary_branch_with_changes "$@"
+    simulate_failure_to_test_branch_cleanup
     create_pr
     close_duplicate_prs
 
