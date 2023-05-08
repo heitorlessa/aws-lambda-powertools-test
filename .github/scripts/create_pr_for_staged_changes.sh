@@ -51,7 +51,7 @@ function has_anything_changed() {
     test -z "${HAS_CHANGE}" && echo "Nothing to update" && exit 0
 }
 
-function push_staged_files_to_temp_branch() {
+function create_temporary_branch_with_changes() {
     debug "Creating branch ${TEMP_BRANCH}"
     git checkout -b "${TEMP_BRANCH}"
 
@@ -66,7 +66,9 @@ function push_staged_files_to_temp_branch() {
 function create_pr() {
     debug "Creating PR against ${BRANCH} branch"
     NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}") # https://github.com/awslabs/aws-lambda-powertools/pull/13
-    NEW_PR_ID="${NEW_PR_URL##*/}"                                                                            # 13
+
+    # greedy remove any string until the last URL path, including the last '/'. https://opensource.com/article/17/6/bash-parameter-expansion
+    NEW_PR_ID="${NEW_PR_URL##*/}" # 13
     export NEW_PR_URL
     export NEW_PR_ID
 }
@@ -94,7 +96,7 @@ function main() {
     has_anything_changed
     has_required_config
 
-    push_staged_files_to_temp_branch "$@"
+    create_temporary_branch_with_changes "$@"
     create_pr
     close_duplicate_prs
 
