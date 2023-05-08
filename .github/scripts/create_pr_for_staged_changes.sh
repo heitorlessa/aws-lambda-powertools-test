@@ -1,16 +1,16 @@
 #!/bin/bash
-set -uxo pipefail # quickest explanation https://gist.github.com/mohanpedala/1e2ff5661761d3abd0385e8223e16425
+set -uxo pipefail # enable debugging, prevent accessing unset env vars, prevent masking pipeline errors to the next command
 
 #docs
 #title              :create_pr_for_staged_changes.sh
-#description        :This script will create a PR for staged changes, detect and close duplicate PRs with the same title, and craft a GitHub Actions report at the end.
+#description        :This script will create a PR for staged changes and detect and close duplicate PRs.
 #author		        :@heitorlessa
 #date               :May 8th 2023
 #version            :0.1
 #usage		        :bash create_pr_for_staged_changes.sh {git_staged_files_or_directories_separated_by_space}
-#notes              :Install Vim and Emacs to use this script.
+#notes              :Meant to use in GitHub Actions only. Temporary branch will be named $TEMP_BRANCH_PREFIX-$GITHUB_RUN_ID
 #os_version         :Ubuntu 22.04.2 LTS
-#required_env_vars  :COMMIT_MSG, PR_TITLE, TEMP_BRANCH, GH_TOKEN, GITHUB_RUN_ID, GITHUB_SERVER_URL, GITHUB_REPOSITORY
+#required_env_vars  :COMMIT_MSG, PR_TITLE, TEMP_BRANCH_PREFIX, GH_TOKEN, GITHUB_RUN_ID, GITHUB_SERVER_URL, GITHUB_REPOSITORY
 #==============================================================================
 
 PR_BODY="This is an automated PR created from the following workflow"
@@ -35,20 +35,28 @@ function notice() {
 function has_required_config() {
     # Default GitHub Actions Env Vars: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
     debug "Do we have required environment variables?"
-    test -z "${TEMP_BRANCH}" && raise_validation_error "TEMP_BRANCH env must be set to create a PR"
+    test -z "${TEMP_BRANCH_PREFIX}" && raise_validation_error "TEMP_BRANCH_PREFIX env must be set to create a PR"
     test -z "${GH_TOKEN}" && raise_validation_error "GH_TOKEN env must be set for GitHub CLI"
     test -z "${GITHUB_RUN_ID}" && raise_validation_error "GITHUB_RUN_ID env must be set to trace Workflow Run ID back to PR"
     test -z "${GITHUB_SERVER_URL}" && raise_validation_error "GITHUB_SERVER_URL env must be set to trace Workflow Run ID back to PR"
     test -z "${GITHUB_REPOSITORY}" && raise_validation_error "GITHUB_REPOSITORY env must be set to trace Workflow Run ID back to PR"
 
-    WORKFLOW_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+    set_environment_variables
+}
+
+function set_environment_variables() {
+    WORKFLOW_URL="${GITHUB_SERVER_URL}"/"${GITHUB_REPOSITORY}"/actions/runs/"${GITHUB_RUN_ID}" # e.g., heitorlessa/aws-lambda-powertools-test/actions/runs/4913570678
+    TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}"                                     # e.g., ci-changelog-4894658712
+
     export readonly WORKFLOW_URL
+    export readonly TEMP_BRANCH
 }
 
 function has_anything_changed() {
-    debug "Is there an update to changelog?"
-    HAS_CHANGE="$(git status --porcelain)"
-    test -z "${HAS_CHANGE}" && echo "Nothing to update" && exit 0
+    debug "Is there an update to the source code?"
+    HAS_ANY_SOURCE_CODE_CHANGED="$(git status --porcelain)"
+
+    test -z "${HAS_ANY_SOURCE_CODE_CHANGED}" && echo "Nothing to update" && exit 0
 }
 
 function create_temporary_branch_with_changes() {
@@ -65,7 +73,7 @@ function create_temporary_branch_with_changes() {
 
 function create_pr() {
     debug "Creating PR against ${BRANCH} branch"
-    NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}") # https://github.com/awslabs/aws-lambda-powertools/pull/13
+    NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}") # e.g, https://github.com/awslabs/aws-lambda-powertools/pull/13
 
     # greedy remove any string until the last URL path, including the last '/'. https://opensource.com/article/17/6/bash-parameter-expansion
     NEW_PR_ID="${NEW_PR_URL##*/}" # 13
@@ -75,11 +83,11 @@ function create_pr() {
 
 function close_duplicate_prs() {
     debug "Do we have any duplicate PRs?"
-    DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number")
+    DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number") # e.g, 13\n14
 
     debug "Closing duplicated PRs if any"
     echo "${DUPLICATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by #${NEW_PR_ID}"
-    export DUPLICATE_PRS
+    export readonly DUPLICATE_PRS
 }
 
 function report_summary() {
