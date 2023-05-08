@@ -21,12 +21,16 @@ permissions:
   security-events: read
   statuses: read
 
+env:
+  ORIGIN: awslabs/aws-lambda-powertools-python
+
 jobs:
   dispatch_token:
     concurrency:
       group: analytics
     runs-on: ubuntu-latest
     environment: analytics
+    if: github.repository == vars.ORIGIN
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef
