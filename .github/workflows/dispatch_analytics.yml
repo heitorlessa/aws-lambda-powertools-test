@@ -22,31 +22,22 @@ permissions:
   statuses: read
 
 env:
-  ORIGIN: "heitorlessa/aws-lambda-powertools-python-test"
+  ORIGIN: heitorlessa/aws-lambda-powertools-test
 
 jobs:
   dispatch_token:
+    if: github.repository == vars.ORIGIN
     concurrency:
       group: analytics
     runs-on: ubuntu-latest
     environment: analytics
     steps:
-      - name: Debug origin
-        run: |
-          echo "$ORIGIN"
-          echo "$REPO"
-          echo "$EVENT"
-        env:
-          REPO: ${{ github.repository }}
-          EVENT: ${{ toJson(github.event) }}
       - name: Configure AWS credentials
-        if: github.repository == vars.ORIGIN
         uses: aws-actions/configure-aws-credentials@e1e17a757e536f70e52b5a12b2e8d1d1c60e04ef
         with:
           aws-region: eu-central-1
           role-to-assume: ${{ secrets.AWS_ANALYTICS_ROLE_ARN }}
       - name: Invoke Lambda function
-        if: github.repository == vars.ORIGIN
         run: |
           payload=$(echo -n '{"githubToken": "${{ secrets.GITHUB_TOKEN }}"}' | base64)
           aws lambda invoke \
