@@ -1,14 +1,16 @@
 #!/bin/bash
 set -uxo pipefail # quickest explanation https://gist.github.com/mohanpedala/1e2ff5661761d3abd0385e8223e16425
+
+#docs
 #title              :create_pr_for_staged_changes.sh
 #description        :This script will create a PR for staged changes, detect and close duplicate PRs with the same title, and craft a GitHub Actions report at the end.
 #author		        :@heitorlessa
 #date               :May 8th 2023
 #version            :0.1
-#usage		        :bash create_pr_for_staged_changes.sh
+#usage		        :bash create_pr_for_staged_changes.sh {git_staged_files_or_directories_separated_by_space}
 #notes              :Install Vim and Emacs to use this script.
-#os_version         :Ubuntu   22.04.2 LTS
-#required_env_vars  :COMMIT_MSG, PR_TITLE, TEMP_BRANCH, GH_TOKEN, RUN_ID, WORKFLOW_URL
+#os_version         :Ubuntu 22.04.2 LTS
+#required_env_vars  :COMMIT_MSG, PR_TITLE, TEMP_BRANCH, GH_TOKEN, GITHUB_RUN_ID, GITHUB_SERVER_URL, GITHUB_REPOSITORY
 #==============================================================================
 
 PR_BODY="This is an automated PR created from the following workflow"
@@ -31,11 +33,16 @@ function notice() {
 }
 
 function has_required_config() {
+    # Default GitHub Actions Env Vars: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
     debug "Do we have required environment variables?"
-    test -z "${WORKFLOW_URL}" && raise_validation_error "WORKFLOW_URL env must be set for traceability"
     test -z "${TEMP_BRANCH}" && raise_validation_error "TEMP_BRANCH env must be set to create a PR"
-    test -z "${RUN_ID}" && raise_validation_error "RUN_ID env must be set to trace Workflow Run ID back to PR"
     test -z "${GH_TOKEN}" && raise_validation_error "GH_TOKEN env must be set for GitHub CLI"
+    test -z "${GITHUB_RUN_ID}" && raise_validation_error "GITHUB_RUN_ID env must be set to trace Workflow Run ID back to PR"
+    test -z "${GITHUB_SERVER_URL}" && raise_validation_error "GITHUB_SERVER_URL env must be set to trace Workflow Run ID back to PR"
+    test -z "${GITHUB_REPOSITORY}" && raise_validation_error "GITHUB_REPOSITORY env must be set to trace Workflow Run ID back to PR"
+
+    WORKFLOW_URL="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+    export readonly WORKFLOW_URL
 }
 
 function has_anything_changed() {
@@ -83,9 +90,6 @@ function report_summary() {
 }
 
 function main() {
-    debug "Incoming event"
-    echo "${GITHUB_EVENT}"
-
     # Sanity check
     has_anything_changed
     has_required_config
