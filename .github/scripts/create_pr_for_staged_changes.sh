@@ -3,20 +3,15 @@ set -uxo pipefail # prevent accessing unset env vars, prevent masking pipeline e
 
 #docs
 #title              :create_pr_for_staged_changes.sh
-#description        :This script will create a PR for staged changes and detect and close duplicate PRs.
+#description        :This script will create a PR for staged changes, detect and close duplicate PRs.
 #author		    :@heitorlessa
 #date               :May 8th 2023
 #version            :0.1
 #usage		    :bash create_pr_for_staged_changes.sh {git_staged_files_or_directories_separated_by_space}
 #notes              :Meant to use in GitHub Actions only. Temporary branch will be named $TEMP_BRANCH_PREFIX-$GITHUB_RUN_ID
 #os_version         :Ubuntu 22.04.2 LTS
-#required_env_vars  :PR_TITLE, TEMP_BRANCH_PREFIX, GH_TOKEN, GITHUB_RUN_ID, GITHUB_SERVER_URL, GITHUB_REPOSITORY
+#required_env_vars  :PR_TITLE, TEMP_BRANCH_PREFIX, GH_TOKEN
 #==============================================================================
-
-PR_BODY="This is an automated PR created from the following workflow"
-FILENAME=".github/scripts/$(basename "$0")"
-readonly PR_BODY
-readonly FILENAME
 
 # Sets GitHub Action with error message to ease troubleshooting
 function error() {
@@ -33,11 +28,13 @@ function notice() {
 }
 
 function has_required_config() {
-    # Default GitHub Actions Env Vars: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
     debug "Do we have required environment variables?"
     test -z "${TEMP_BRANCH_PREFIX}" && error "TEMP_BRANCH_PREFIX env must be set to create a PR"
-    test -z "${GH_TOKEN}" && error "GH_TOKEN env must be set for GitHub CLI"
     test -z "${PR_TITLE}" && error "PR_TITLE env must be set"
+    test -z "${GH_TOKEN}" && error "GH_TOKEN env must be set for GitHub CLI"
+
+    # Default GitHub Actions Env Vars: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+    debug "Are we running in GitHub Action environment?"
     test -z "${GITHUB_RUN_ID}" && error "GITHUB_RUN_ID env must be set to trace Workflow Run ID back to PR"
     test -z "${GITHUB_SERVER_URL}" && error "GITHUB_SERVER_URL env must be set to trace Workflow Run ID back to PR"
     test -z "${GITHUB_REPOSITORY}" && error "GITHUB_REPOSITORY env must be set to trace Workflow Run ID back to PR"
@@ -46,13 +43,11 @@ function has_required_config() {
 }
 
 function set_environment_variables() {
-    WORKFLOW_URL="${GITHUB_SERVER_URL}"/"${GITHUB_REPOSITORY}"/actions/runs/"${GITHUB_RUN_ID}" # e.g., heitorlessa/aws-lambda-powertools-test/actions/runs/4913570678
-    TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}"                                     # e.g., ci-changelog-4894658712
-    BASE_BRANCH="${BASE_BRANCH:-develop}"                                                      # e.g., main, defaults to develop if missing
-
-    export readonly WORKFLOW_URL
-    export readonly TEMP_BRANCH
-    export readonly BASE_BRANCH
+    export readonly WORKFLOW_URL="${GITHUB_SERVER_URL}"/"${GITHUB_REPOSITORY}"/actions/runs/"${GITHUB_RUN_ID}" # e.g., heitorlessa/aws-lambda-powertools-test/actions/runs/4913570678
+    export readonly TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}"                                     # e.g., ci-changelog-4894658712
+    export readonly BASE_BRANCH="${BASE_BRANCH:-develop}"                                                      # e.g., main, defaults to develop if missing
+    export readonly PR_BODY="This is an automated PR created from the following workflow"
+    export readonly FILENAME=".github/scripts/$(basename "$0")"
 }
 
 function has_anything_changed() {
