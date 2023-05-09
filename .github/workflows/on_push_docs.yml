@@ -46,7 +46,7 @@ jobs:
         id: create_pr
         run: |
           bash .github/scripts/create_pr_for_staged_changes.sh docs mkdocs.yml examples
-          echo TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}"
+          echo TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
         env:
           PR_TITLE: ${{ env.PR_TITLE }}
           TEMP_BRANCH_PREFIX: ${{ env.TEMP_BRANCH_PREFIX }}
