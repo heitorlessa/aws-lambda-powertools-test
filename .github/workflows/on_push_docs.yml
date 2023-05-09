@@ -9,14 +9,50 @@ on:
       - "mkdocs.yml"
       - "examples/**"
 
+env:
+  TEMP_BRANCH_PREFIX: "ci-docs"
+  PR_TITLE: "chore(ci): docs rebuild"
+
 jobs:
-  changelog:
+
+  docs_pr:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    uses: ./.github/workflows/reusable_publish_changelog.yml
+      pull-requests: write
+    outputs:
+      TEMP_BRANCH: ${{ steps.create_pr.outputs.TEMP_BRANCH }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Git client setup and refresh tip
+        run: |
+          git config user.name "Release bot"
+          git config user.email "aws-devax-open-source@amazon.com"
+          git config pull.rebase true
+          git config remote.origin.url >&-
+      - name: "Generate latest changelog"
+        run: make changelog
+      - name: Create PR
+        id: create_pr
+        run: |
+          bash .github/scripts/create_pr_for_staged_changes.sh docs mkdocs.yml examples
+          echo TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}"
+        env:
+          PR_TITLE: ${{ env.PR_TITLE }}
+          TEMP_BRANCH_PREFIX: ${{ env.TEMP_BRANCH_PREFIX }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cleanup orphaned branch
+        if: failure()
+        run: git push origin --delete "${TEMP_BRANCH_PREFIX}-${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed."
+        env:
+          TEMP_BRANCH_PREFIX: ${{ env.TEMP_BRANCH_PREFIX }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
 
   release-docs:
-    needs: changelog
+    needs: docs_pr
     permissions:
       contents: write
       pages: write
@@ -24,6 +60,8 @@ jobs:
     with:
       version: develop
       alias: stage
+      git_ref: ${{ needs.docs_pr.outputs.TEMP_BRANCH }}
+
 # Maintenance: Only necessary in repo migration
 # - name: Create redirect from old docs
 #   run: |
