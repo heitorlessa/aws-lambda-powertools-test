@@ -84,11 +84,11 @@ function close_duplicate_prs() {
     debug "Do we have any duplicate PRs?"
     DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number") # e.g, 13\n14
 
-    if [ -n "${DUPLICATE_PRS}"]; then
+    if [ -z "${DUPLICATE_PRS}"]; then
+        DUPLICATE_PRS="${NO_DUPLICATES_MESSAGE}"
+    else
         debug "Closing duplicated PRs: "${DUPLICATE_PRS}""
         echo "${DUPLICATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by #${NEW_PR_ID}"
-    else
-        DUPLICATE_PRS="${NO_DUPLICATES_MESSAGE}"
     fi
 
     export readonly DUPLICATE_PRS
