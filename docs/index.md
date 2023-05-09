@@ -5,7 +5,7 @@ description: AWS Lambda Powertools for Python
 
 <!-- markdownlint-disable MD043 MD013 -->
 
-!!! danger "Testing new docs pr"
+!!! danger "Testing new docs pr mechanism"
 
 Powertools is a developer toolkit to implement Serverless best practices and increase developer velocity.
 
