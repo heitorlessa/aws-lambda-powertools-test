@@ -1,5 +1,5 @@
 #!/bin/bash
-set -uxo pipefail # enable debugging, prevent accessing unset env vars, prevent masking pipeline errors to the next command
+set -uxo pipefail # prevent accessing unset env vars, prevent masking pipeline errors to the next command
 
 #docs
 #title              :create_pr_for_staged_changes.sh
@@ -15,13 +15,11 @@ set -uxo pipefail # enable debugging, prevent accessing unset env vars, prevent 
 
 PR_BODY="This is an automated PR created from the following workflow"
 FILENAME=".github/scripts/$(basename "$0")"
-BASE_BRANCH="develop"
 readonly PR_BODY
 readonly FILENAME
-readonly BASE_BRANCH
 
 # Sets GitHub Action with error message to ease troubleshooting
-function raise_validation_error() {
+function error() {
     echo "::error file=${FILENAME}::$1"
     exit 1
 }
@@ -37,12 +35,12 @@ function notice() {
 function has_required_config() {
     # Default GitHub Actions Env Vars: https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
     debug "Do we have required environment variables?"
-    test -z "${TEMP_BRANCH_PREFIX}" && raise_validation_error "TEMP_BRANCH_PREFIX env must be set to create a PR"
-    test -z "${GH_TOKEN}" && raise_validation_error "GH_TOKEN env must be set for GitHub CLI"
-    test -z "${PR_TITLE}" && raise_validation_error "PR_TITLE env must be set"
-    test -z "${GITHUB_RUN_ID}" && raise_validation_error "GITHUB_RUN_ID env must be set to trace Workflow Run ID back to PR"
-    test -z "${GITHUB_SERVER_URL}" && raise_validation_error "GITHUB_SERVER_URL env must be set to trace Workflow Run ID back to PR"
-    test -z "${GITHUB_REPOSITORY}" && raise_validation_error "GITHUB_REPOSITORY env must be set to trace Workflow Run ID back to PR"
+    test -z "${TEMP_BRANCH_PREFIX}" && error "TEMP_BRANCH_PREFIX env must be set to create a PR"
+    test -z "${GH_TOKEN}" && error "GH_TOKEN env must be set for GitHub CLI"
+    test -z "${PR_TITLE}" && error "PR_TITLE env must be set"
+    test -z "${GITHUB_RUN_ID}" && error "GITHUB_RUN_ID env must be set to trace Workflow Run ID back to PR"
+    test -z "${GITHUB_SERVER_URL}" && error "GITHUB_SERVER_URL env must be set to trace Workflow Run ID back to PR"
+    test -z "${GITHUB_REPOSITORY}" && error "GITHUB_REPOSITORY env must be set to trace Workflow Run ID back to PR"
 
     set_environment_variables
 }
@@ -50,9 +48,11 @@ function has_required_config() {
 function set_environment_variables() {
     WORKFLOW_URL="${GITHUB_SERVER_URL}"/"${GITHUB_REPOSITORY}"/actions/runs/"${GITHUB_RUN_ID}" # e.g., heitorlessa/aws-lambda-powertools-test/actions/runs/4913570678
     TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}"                                     # e.g., ci-changelog-4894658712
+    BASE_BRANCH="${BASE_BRANCH:-develop}"                                                      # e.g., main, defaults to develop if missing
 
     export readonly WORKFLOW_URL
     export readonly TEMP_BRANCH
+    export readonly BASE_BRANCH
 }
 
 function has_anything_changed() {
@@ -76,7 +76,7 @@ function create_temporary_branch_with_changes() {
 
 function create_pr() {
     debug "Creating PR against ${TEMP_BRANCH} branch"
-    NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BASE_BRANCH}") # e.g, https://github.com/awslabs/aws-lambda-powertools/pull/13
+    NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BASE_BRANCH}" || error "Failed to create PR") # e.g, https://github.com/awslabs/aws-lambda-powertools/pull/13
 
     # greedy remove any string until the last URL path, including the last '/'. https://opensource.com/article/17/6/bash-parameter-expansion
     NEW_PR_ID="${NEW_PR_URL##*/}" # 13
