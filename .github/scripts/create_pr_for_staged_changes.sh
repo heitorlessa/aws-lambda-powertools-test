@@ -88,14 +88,19 @@ function close_duplicate_prs() {
     debug "Do we have any duplicate PRs?"
     DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number") # e.g, 13\n14
 
-    debug "Closing duplicated PRs if any"
-    echo "${DUPLICATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by #${NEW_PR_ID}"
+    if [ -n "${DUPLICATE_PRS}"]; then
+        debug "Closing duplicated PRs: "${DUPLICATED_PRS}""
+        echo "${DUPLICATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by #${NEW_PR_ID}"
+    else
+        DUPLICATE_PRS="no duplicates"
+    fi
+
     export readonly DUPLICATE_PRS
 }
 
 function report_summary() {
     debug "Creating job summary"
-    echo "### Pull request created successfully :rocket: #${NEW_PR_URL} <br/><br/> Closed duplicated PRs (if any): ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
+    echo "### Pull request created successfully :rocket: ${NEW_PR_URL} <br/><br/> Closed duplicated PRs: ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
 
     notice "PR_URL is ${NEW_PR_URL}"
     notice "PR_BRANCH is ${TEMP_BRANCH}"
