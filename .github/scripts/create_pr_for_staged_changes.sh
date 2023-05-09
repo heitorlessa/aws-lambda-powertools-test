@@ -73,8 +73,8 @@ function create_temporary_branch_with_changes() {
 }
 
 function create_pr() {
-    debug "Creating PR against ${BRANCH} branch"
-    NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BRANCH}") # e.g, https://github.com/awslabs/aws-lambda-powertools/pull/13
+    debug "Creating PR against ${TEMP_BRANCH} branch"
+    NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${TEMP_BRANCH}") # e.g, https://github.com/awslabs/aws-lambda-powertools/pull/13
 
     # greedy remove any string until the last URL path, including the last '/'. https://opensource.com/article/17/6/bash-parameter-expansion
     NEW_PR_ID="${NEW_PR_URL##*/}" # 13
