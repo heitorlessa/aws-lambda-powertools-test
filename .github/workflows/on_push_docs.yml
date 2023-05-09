@@ -1,13 +1,18 @@
 name: Docs
 
 on:
-  push:
-    branches:
-      - develop
-    paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - "examples/**"
+  workflow_dispatch:
+    inputs:
+      take:
+        description: "Take number"
+        required: true
+  # push:
+  #   branches:
+  #     - develop
+  #   paths:
+  #     - "docs/**"
+  #     - "mkdocs.yml"
+  #     - "examples/**"
 
 env:
   TEMP_BRANCH_PREFIX: "ci-docs"
@@ -33,8 +38,10 @@ jobs:
           git config user.email "aws-devax-open-source@amazon.com"
           git config pull.rebase true
           git config remote.origin.url >&-
-      - name: "Generate latest changelog"
-        run: make changelog
+      - name: Update docs inflight
+        run: echo "!!! danger \"Testing new docs pr mechanism take ${ATTEMPT}\"" >> docs/index.md
+        env:
+          ATTEMPT: ${{ inputs.take }}
       - name: Create PR
         id: create_pr
         run: |
