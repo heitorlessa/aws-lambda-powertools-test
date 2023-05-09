@@ -82,11 +82,13 @@ function create_pr() {
 
 function close_duplicate_prs() {
     debug "Do we have any duplicate PRs?"
-    DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number" || "${NO_DUPLICATES_MESSAGE}") # e.g, 13\n14
+    DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number") # e.g, 13\n14
 
-    if [ "${DUPLICATE_PRS}" != "${NO_DUPLICATES_MESSAGE}" ]; then
-        debug "Closing duplicated PRs: "${DUPLICATED_PRS}""
+    if [ -n "${DUPLICATE_PRS}"]; then
+        debug "Closing duplicated PRs: "${DUPLICATE_PRS}""
         echo "${DUPLICATE_PRS}" | xargs -L1 gh pr close --delete-branch --comment "Superseded by #${NEW_PR_ID}"
+    else
+        DUPLICATE_PRS="${NO_DUPLICATES_MESSAGE}"
     fi
 
     export readonly DUPLICATE_PRS
