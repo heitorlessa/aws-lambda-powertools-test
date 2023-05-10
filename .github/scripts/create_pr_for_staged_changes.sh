@@ -113,7 +113,7 @@ function close_duplicate_prs() {
 }
 
 function report_summary() {
-    start_pan "Creating job summary"
+    start_span "Creating job summary"
     echo "### Pull request created successfully :rocket: ${NEW_PR_URL} <br/><br/> Closed duplicated PRs: ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
 
     notice "PR_URL is: ${NEW_PR_URL}"
