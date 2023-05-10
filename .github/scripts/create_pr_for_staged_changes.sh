@@ -110,6 +110,7 @@ function main() {
 
     create_temporary_branch_with_changes "$@"
     create_pr
+    error "Force cleanup"
     close_duplicate_prs
 
     report_summary

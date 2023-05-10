@@ -53,10 +53,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Cleanup orphaned branch
         if: failure()
-        run: git push origin --delete "${TEMP_BRANCH_PREFIX}-${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed."
+        run: git push origin --delete "${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed."
         env:
           TEMP_BRANCH_PREFIX: ${{ env.TEMP_BRANCH_PREFIX }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
 
   release-docs:
     needs: docs_pr
