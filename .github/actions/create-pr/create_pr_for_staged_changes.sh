@@ -77,7 +77,7 @@ function create_temporary_branch_with_changes() {
     git checkout -b "${TEMP_BRANCH}"
 
     debug "Committing staged files: $*"
-    git add "$@"
+    git add "$@" || error "Failed to add staged changes: "$@""
     git commit -m "${PR_TITLE}"
 
     git push origin "${TEMP_BRANCH}"
