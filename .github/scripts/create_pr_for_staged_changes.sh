@@ -1,5 +1,5 @@
 #!/bin/bash
-set -uxo pipefail # prevent accessing unset env vars, prevent masking pipeline errors to the next command
+set -uo pipefail # prevent accessing unset env vars, prevent masking pipeline errors to the next command
 
 #docs
 #title              :create_pr_for_staged_changes.sh
