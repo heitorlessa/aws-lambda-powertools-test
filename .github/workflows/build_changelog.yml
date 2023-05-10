@@ -32,11 +32,13 @@ jobs:
           git config remote.origin.url >&-
           git pull origin "${BRANCH}"
       - name: "Generate latest changelog"
-        run: make changelog
+        run: |
+          make changelog
+          echo "take 10" >> docs/index.md
       - name: Create PR
         uses: ./.github/actions/create-pr
         with:
-          files: "CHANGELOG.md docs/index.md examples/"
+          files: "CHANGELOG.md docs"
           temp_branch_prefix: "ci-changelog"
           pull_request_title: "chore(ci): changelog rebuild"
           github_token: ${{ secrets.GITHUB_TOKEN }}
