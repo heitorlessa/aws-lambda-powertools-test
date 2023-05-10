@@ -37,7 +37,7 @@ runs:
     - id: cleanup
       name: Cleanup orphaned branch
       if: failure()
-      run: git push origin --delete "${TEMP_BRANCH_PREFIX}-${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed." && exit 0
+      run: git push origin --delete "${TEMP_BRANCH_PREFIX}-${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed."
       env:
         TEMP_BRANCH_PREFIX: ${{ inputs.temp_branch_prefix }}
         GITHUB_RUN_ID: ${{ github.run_id }}
