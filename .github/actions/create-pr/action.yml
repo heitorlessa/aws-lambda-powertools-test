@@ -28,10 +28,7 @@ runs:
       shell: bash
     - id: create-pr
       working-directory: ${{ env.GITHUB_WORKSPACE }}
-      run: |
-        echo ${GITHUB_WORKSPACE}
-        ls
-        create_pr_for_staged_changes.sh "${FILES}"
+      run: create_pr_for_staged_changes.sh "${FILES}"
       env:
         FILES: ${{ inputs.files }}
         TEMP_BRANCH_PREFIX: ${{ inputs.temp_branch_prefix }}

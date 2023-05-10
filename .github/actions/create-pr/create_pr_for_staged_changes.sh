@@ -100,7 +100,7 @@ function close_duplicate_prs() {
     start_span "Searching for duplicate PRs"
     DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number") # e.g, 13\n14
 
-    if [ -z "${DUPLICATE_PRS}"]; then
+    if [ -z "${DUPLICATE_PRS}" ]; then
         debug "No duplicate PRs found"
         DUPLICATE_PRS="${NO_DUPLICATES_MESSAGE}"
     else
