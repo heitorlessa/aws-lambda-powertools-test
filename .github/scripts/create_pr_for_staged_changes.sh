@@ -20,7 +20,8 @@ function error() {
 }
 
 function debug() {
-    echo "::debug::$1"
+    TIMESTAMP=$(date -u "+%FT%TZ") # 2023-05-10T07:53:59Z
+    echo ""${TIMESTAMP}" - $1"
 }
 
 function notice() {
@@ -47,6 +48,7 @@ function has_required_config() {
     test -z "${GITHUB_SERVER_URL}" && error "GITHUB_SERVER_URL env must be set to trace Workflow Run ID back to PR"
     test -z "${GITHUB_REPOSITORY}" && error "GITHUB_REPOSITORY env must be set to trace Workflow Run ID back to PR"
 
+    debug "Config validated successfully!"
     set_environment_variables
     end_span
 }
@@ -66,7 +68,7 @@ function has_anything_changed() {
     start_span "Validating git staged files"
     HAS_ANY_SOURCE_CODE_CHANGED="$(git status --porcelain)"
 
-    test -z "${HAS_ANY_SOURCE_CODE_CHANGED}" && echo "Nothing to update" && exit 0
+    test -z "${HAS_ANY_SOURCE_CODE_CHANGED}" && debug "Nothing to update; exitting early" && exit 0
     end_span
 }
 
@@ -87,7 +89,7 @@ function create_pr() {
     NEW_PR_URL=$(gh pr create --title "${PR_TITLE}" --body "${PR_BODY}: ${WORKFLOW_URL}" --base "${BASE_BRANCH}" || error "Failed to create PR") # e.g, https://github.com/awslabs/aws-lambda-powertools/pull/13
 
     # greedy remove any string until the last URL path, including the last '/'. https://opensource.com/article/17/6/bash-parameter-expansion
-    debug "Extracing PR Number from PR URL "${NEW_PR_URL}""
+    debug "Extracing PR Number from PR URL: "${NEW_PR_URL}""
     NEW_PR_ID="${NEW_PR_URL##*/}" # 13
     export NEW_PR_URL
     export NEW_PR_ID
@@ -99,6 +101,7 @@ function close_duplicate_prs() {
     DUPLICATE_PRS=$(gh pr list --search "${PR_TITLE}" --json number --jq ".[] | select(.number != ${NEW_PR_ID}) | .number") # e.g, 13\n14
 
     if [ -z "${DUPLICATE_PRS}"]; then
+        debug "No duplicate PRs found"
         DUPLICATE_PRS="${NO_DUPLICATES_MESSAGE}"
     else
         debug "Closing duplicated PRs: "${DUPLICATE_PRS}""
@@ -113,9 +116,9 @@ function report_summary() {
     start_pan "Creating job summary"
     echo "### Pull request created successfully :rocket: ${NEW_PR_URL} <br/><br/> Closed duplicated PRs: ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
 
-    notice "PR_URL is ${NEW_PR_URL}"
-    notice "PR_BRANCH is ${TEMP_BRANCH}"
-    notice "PR_DUPLICATES are ${DUPLICATE_PRS}"
+    notice "PR_URL is: ${NEW_PR_URL}"
+    notice "PR_BRANCH is: ${TEMP_BRANCH}"
+    notice "PR_DUPLICATES are: ${DUPLICATE_PRS}"
     end_span
 }
 
