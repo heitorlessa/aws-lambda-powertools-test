@@ -34,9 +34,9 @@ jobs:
       - name: "Generate latest changelog"
         run: make changelog
       - name: Create PR
-        uses: ./github/actions/create-pr
+        uses: ./.github/actions/create-pr
         with:
-          files: CHANGELOG.md docs/index.md examples/
+          files: "CHANGELOG.md docs/index.md examples/"
           temp_branch_prefix: "ci-changelog"
           pull_request_title: "chore(ci): changelog rebuild"
           github_token: ${{ secrets.GITHUB_TOKEN }}

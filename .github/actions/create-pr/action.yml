@@ -35,7 +35,7 @@ runs:
       run: |
 # create_pr_for_staged_changes.sh ${FILES}
         ls -l
-        echo "pr_id=10" >> $GITHUB_OUTPUT
+        echo "pull_request_id=10" >> $GITHUB_OUTPUT
         echo temp_branch="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
         echo $FILES
         gh config list
