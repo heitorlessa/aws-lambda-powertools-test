@@ -1,5 +1,8 @@
 name: "Create PR custom action"
 description: "Create a PR and a temporary branch, close duplicates"
+
+# This custom action
+
 inputs:
   files:
     description: "Files to add"
@@ -25,6 +28,14 @@ runs:
   steps:
     - id: adjust-path
       run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+    - id: setup-git
+      name: Git client setup and refresh tip
+      run: |
+        git config user.name "Powertools bot"
+        git config user.email "aws-lambda-powertools-feedback@amazon.com"
+        git config pull.rebase true
+        git config remote.origin.url >&-
       shell: bash
     - id: create-pr
       working-directory: ${{ env.GITHUB_WORKSPACE }}
