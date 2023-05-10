@@ -32,13 +32,17 @@ runs:
         FILES: ${{ inputs.files }}
       shell: bash
     - id: create-pr
-      run: |
-        echo "pull_request_id=10" >> $GITHUB_OUTPUT
-        echo temp_branch="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
-        echo $FILES
-        gh config list
+      run: create_pr_for_staged_changes.sh "${FILES}"
       env:
         FILES: ${{ inputs.files }}
         TEMP_BRANCH_PREFIX: ${{ inputs.temp_branch_prefix }}
         GH_TOKEN: ${{ inputs.github_token }}
+      shell: bash
+    - id: cleanup
+      name: Cleanup orphaned branch
+      if: failure()
+      run: git push origin --delete "${TEMP_BRANCH_PREFIX}-${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed."
+      env:
+        TEMP_BRANCH_PREFIX: ${{ inputs.temp_branch_prefix }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
       shell: bash

@@ -112,6 +112,13 @@ function close_duplicate_prs() {
     end_span
 }
 
+function report_job_output() {
+    start_span "Updating job outputs"
+    echo "pull_request_id="${NEW_PR_ID}"" >>"$GITHUB_OUTPUT"
+    echo temp_branch="${TEMP_BRANCH}" >>"$GITHUB_OUTPUT"
+    end_span
+}
+
 function report_summary() {
     start_span "Creating job summary"
     echo "### Pull request created successfully :rocket: ${NEW_PR_URL} <br/><br/> Closed duplicated PRs: ${DUPLICATE_PRS}" >>"$GITHUB_STEP_SUMMARY"
@@ -131,6 +138,7 @@ function main() {
     create_pr
     close_duplicate_prs
 
+    report_job_output
     report_summary
 }
 
