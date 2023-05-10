@@ -24,35 +24,22 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      # - name: Git client setup and refresh tip
-      #   run: |
-      #     git config user.name "Release bot"
-      #     git config user.email "aws-devax-open-source@amazon.com"
-      #     git config pull.rebase true
-      #     git config remote.origin.url >&-
-      #     git pull origin "${BRANCH}"
       - name: "Generate latest changelog"
         run: make changelog
       - name: Create PR
+        id: create-pr
         uses: ./.github/actions/create-pr
         with:
           files: "CHANGELOG.md"
           temp_branch_prefix: "ci-changelog"
           pull_request_title: "chore(ci): changelog rebuild"
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: Create PR
-      #   run: bash .github/scripts/create_pr_for_staged_changes.sh CHANGELOG.md
-      #   env:
-      #     PR_TITLE: "chore(ci): changelog rebuild"
-      #     TEMP_BRANCH_PREFIX: "ci-changelog"
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Cleanup orphaned branch
-      #   if: failure()
-      #   run: git push origin --delete "${TEMP_BRANCH_PREFIX}-${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed."
-      #   env:
-      #     TEMP_BRANCH_PREFIX: "ci-changelog"
-      #     GITHUB_RUN_ID: ${{ github.run_id }}
-
+      - name: Debug output
+        run: |
+          echo "PR number: ${PR_ID}"
+          echo "Branch: ${BRANCH}"
+        env:
+          PR_ID: ${{ steps.create-pr.outputs.pull_request_id}}
+          BRANCH: ${{ steps.create-pr.outputs.temp_branch}}
   # changelog:
   #   uses: ./.github/workflows/reusable_publish_changelog.yml
