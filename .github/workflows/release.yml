@@ -100,7 +100,9 @@ jobs:
       - name: Cache sealed source code
         uses: actions/cache/save@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
-          path: .
+          path: |
+            .*
+            !.git
           key: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
 
   # This job runs our automated test suite, complexity and security baselines
@@ -197,20 +199,18 @@ jobs:
     permissions:
       contents: write
     steps:
-      # We need checkout action to configure Git references correctly
-      # otherwise we'll bump into the error: fatal: could not read Username for 'https://github.com': No such device or address
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-        with:
-          ref: ${{ env.RELEASE_COMMIT }}
+      # # We need checkout action to configure Git references correctly
+      # # otherwise we'll bump into the error: fatal: could not read Username for 'https://github.com': No such device or address
+      # - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+      #   with:
+      #     ref: ${{ env.RELEASE_COMMIT }}
 
+      # TODO: This makes .git actions to fail...
       - name: Restore sealed source code
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
           path: .
           key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
-
-      - name: List source code
-        run: cat pyproject.toml
 
       - id: setup-git
         name: Git client setup and refresh tip
@@ -247,9 +247,9 @@ jobs:
       pull-requests: write # create-pr action creates a PR using the temporary branch
     runs-on: ubuntu-latest
     steps:
-      # - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-      #   with:
-      #     ref: ${{ env.RELEASE_COMMIT }}
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
       - name: Restore sealed source code
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
