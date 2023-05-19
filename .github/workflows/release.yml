@@ -230,6 +230,9 @@ jobs:
           path: .
           key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
 
+      - name: Debug cache restore
+        run: cat pyproject.toml
+
       - id: setup-git
         name: Git client setup and refresh tip
         run: |
@@ -263,6 +266,9 @@ jobs:
         with:
           path: .
           key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+
+      - name: Debug cache restore
+        run: cat pyproject.toml
 
       - name: Create PR
         id: create-pr
