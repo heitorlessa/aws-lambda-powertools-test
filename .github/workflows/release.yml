@@ -113,6 +113,11 @@ jobs:
     permissions:
       contents: read
     steps:
+      # NOTE: we need actions/checkout to configure git first (pre-commit hooks in make dev)
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+
       - name: Restore sealed source code
         uses: actions/download-artifact@cbed621e49e4c01b044d60f6c80ea4ed6328b281 # v2.1.1
         with:
