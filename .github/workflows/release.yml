@@ -97,20 +97,7 @@ jobs:
           # examples/               - user guide code snippets
           SOURCE_CODE_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
-      - name: Debug cache restore
-        run: |
-          ls -l .
-          ls -l "${GITHUB_WORKSPACE}"/
-
-      - name: Cache sealed source code
-        uses: actions/cache/save@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
-        with:
-          path: |
-            ${{ github.workspace }}
-            !${{ github.workspace }}/.git
-          key: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
-
-      - name: Test upload
+      - name: Upload sealed source code
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
         with:
             name: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
@@ -128,10 +115,16 @@ jobs:
       contents: read
     steps:
       - name: Restore sealed source code
-        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
+          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
-          key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+      # - name: Restore sealed source code
+      #   uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+      #   with:
+      #     path: .
+      #     key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+
       - name: Debug cache restore
         run: |
           ls -l
@@ -163,10 +156,10 @@ jobs:
       RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
     steps:
       - name: Restore sealed source code
-        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
+          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
-          key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
 
       - name: Install poetry
         run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
@@ -179,6 +172,7 @@ jobs:
       - name: Build python package and wheel
         run: poetry build
 
+      # TODO: move to upload-artifact
       - name: Cache release artifact
         id: cache-release-build
         uses: actions/cache/save@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
@@ -224,12 +218,11 @@ jobs:
       #   with:
       #     ref: ${{ env.RELEASE_COMMIT }}
 
-      # TODO: This makes .git actions to fail...
       - name: Restore sealed source code
-        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
+          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
-          key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
 
       - id: setup-git
         name: Git client setup and refresh tip
@@ -270,10 +263,10 @@ jobs:
         with:
           ref: ${{ env.RELEASE_COMMIT }}
       - name: Restore sealed source code
-        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
+          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
-          key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
       - name: Create PR
         id: create-pr
         uses: ./.github/actions/create-pr
