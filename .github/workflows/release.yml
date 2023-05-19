@@ -97,8 +97,11 @@ jobs:
           # examples/               - user guide code snippets
           SOURCE_CODE_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Debug cache restore
+        run: |
+          ls -l ~work/
+          ls -l ~work/aws_lambda_powertools/
+          exit 1
 
       - name: Cache sealed source code
         uses: actions/cache/save@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
