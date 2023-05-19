@@ -97,11 +97,6 @@ jobs:
           # examples/               - user guide code snippets
           SOURCE_CODE_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
-      - name: Debug cache restore
-        run: |
-          ls -l .
-          ls -l "${GITHUB_WORKSPACE}"/
-
       - name: Cache sealed source code
         uses: actions/cache/save@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
@@ -120,6 +115,13 @@ jobs:
     permissions:
       contents: read
     steps:
+      # NOTE: actions/cache only works if actions/checkout is used in tandem
+      # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+
+      # then override
       - name: Restore sealed source code
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
@@ -129,7 +131,6 @@ jobs:
         run: |
           ls -l
           ls -l .git/
-          ls -l aws_lambda_powertools
 
       - name: Install poetry
         run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
@@ -211,13 +212,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      # # We need checkout action to configure Git references correctly
-      # # otherwise we'll bump into the error: fatal: could not read Username for 'https://github.com': No such device or address
-      # - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-      #   with:
-      #     ref: ${{ env.RELEASE_COMMIT }}
+      # NOTE: actions/cache only works if actions/checkout is used in tandem
+      # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
 
-      # TODO: This makes .git actions to fail...
+      # then override
       - name: Restore sealed source code
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
@@ -237,6 +238,35 @@ jobs:
           git tag -a v"${RELEASE_VERSION}" -m "release_version: v${RELEASE_VERSION}"
           git push origin v"${RELEASE_VERSION}"
 
+
+  bump_version:
+    needs: [release, seal]
+    permissions:
+      contents: write  # create-pr action creates a temporary branch
+      pull-requests: write # create-pr action creates a PR using the temporary branch
+    runs-on: ubuntu-latest
+    steps:
+      # NOTE: actions/cache only works if actions/checkout is used in tandem
+      # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+
+      # then override
+      - name: Restore sealed source code
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        with:
+          path: .
+          key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+      - name: Create PR
+        id: create-pr
+        uses: ./.github/actions/create-pr
+        with:
+          files: "pyproject.toml"
+          temp_branch_prefix: "ci-bump"
+          pull_request_title: "chore(ci): bump version to ${{ needs.seal.outputs.RELEASE_VERSION }}"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
   # # NOTE: Watch out for the depth limit of 4 nested workflow_calls.
   # # publish_layer -> publish_v2_layer -> reusable_deploy_v2_layer_stack
   # publish_layer:
@@ -252,29 +282,6 @@ jobs:
   #     latest_published_version: ${{ needs.build.outputs.RELEASE_VERSION }}
   #     pre_release: ${{ inputs.pre_release }}
 
-  bump_version:
-    needs: [release, seal]
-    permissions:
-      contents: write  # create-pr action creates a temporary branch
-      pull-requests: write # create-pr action creates a PR using the temporary branch
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-        with:
-          ref: ${{ env.RELEASE_COMMIT }}
-      - name: Restore sealed source code
-        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
-        with:
-          path: .
-          key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
-      - name: Create PR
-        id: create-pr
-        uses: ./.github/actions/create-pr
-        with:
-          files: "pyproject.toml"
-          temp_branch_prefix: "ci-bump"
-          pull_request_title: "chore(ci): bump version to ${{ needs.seal.outputs.RELEASE_VERSION }}"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # post_release:
   #   needs: [build, release, publish_layer]
