@@ -99,9 +99,8 @@ jobs:
 
       - name: Debug cache restore
         run: |
-          echo "${GITHUB_WORKSPACE}"
-          ls -l ~/work/aws-lambda-powertools-test/
-          ls -l ~/work/aws-lambda-powertools-test/.git
+          ls -l "${GITHUB_WORKSPACE}"/
+          ls -l "${GITHUB_WORKSPACE}"/.git
           exit 1
 
       - name: Cache sealed source code
