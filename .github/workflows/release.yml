@@ -101,14 +101,13 @@ jobs:
         run: |
           ls -l "${GITHUB_WORKSPACE}"/
           ls -l "${GITHUB_WORKSPACE}"/.git
-          exit 1
 
       - name: Cache sealed source code
         uses: actions/cache/save@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
           path: |
-            ~/**/*
-            !~/.git
+            ${{ env.GITHUB_WORKSPACE }}/**/*
+            !${{ env.GITHUB_WORKSPACE }}/.git
           key: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
 
 
