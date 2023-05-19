@@ -115,7 +115,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      # NOTE: actions/cache only works if actions/checkout is used in tandem
+      # NOTE: actions/cache is scoped to a key+branch, thus requiring actions/checkout before restoring
       # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
@@ -154,6 +154,13 @@ jobs:
     env:
       RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
     steps:
+      # NOTE: actions/cache is scoped to a key+branch, thus requiring actions/checkout before restoring
+      # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+
+      # then restore
       - name: Restore sealed source code
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
@@ -190,7 +197,7 @@ jobs:
     env:
       RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
     steps:
-      # NOTE: actions/cache only works if actions/checkout is used in tandem
+      # NOTE: actions/cache is scoped to a key+branch, thus requiring actions/checkout before restoring
       # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
@@ -217,7 +224,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      # NOTE: actions/cache only works if actions/checkout is used in tandem
+      # NOTE: actions/cache is scoped to a key+branch, thus requiring actions/checkout before restoring
       # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
@@ -254,7 +261,7 @@ jobs:
       pull-requests: write # create-pr action creates a PR using the temporary branch
     runs-on: ubuntu-latest
     steps:
-      # NOTE: actions/cache only works if actions/checkout is used in tandem
+      # NOTE: actions/cache is scoped to a key+branch, thus requiring actions/checkout before restoring
       # https://github.com/orgs/community/discussions/27059#discussioncomment-3254477
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
