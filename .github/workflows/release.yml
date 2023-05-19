@@ -45,6 +45,9 @@ on:
         type: boolean
         required: false
 
+env:
+  RELEASE_COMMIT: ${{ github.sha }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -55,13 +58,9 @@ jobs:
     env:
       RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
     steps:
-      - name: Debug event
-        run: echo "${GIT_COMMIT_SHA}"
-        env:
-          GIT_COMMIT_SHA: ${{ github.sha }}
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
-          fetch-depth: 0
+          ref: ${{ env.RELEASE_COMMIT }}
       - name: Install poetry
         run: pipx install poetry
       - name: Set up Python
@@ -110,6 +109,8 @@ jobs:
       RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
       - name: Restore release artifact from cache
         id: restore-release-build
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
@@ -133,6 +134,8 @@ jobs:
       RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
       - id: setup-git
         name: Git client setup and refresh tip
         run: |
@@ -169,6 +172,8 @@ jobs:
       RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
       - name: Install poetry
         run: pipx install poetry
       - name: Bump package version
