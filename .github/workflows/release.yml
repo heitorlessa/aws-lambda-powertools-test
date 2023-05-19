@@ -239,6 +239,8 @@ jobs:
           git commit -m "chore: version bump"
           git tag -a v"${RELEASE_VERSION}" -m "release_version: v${RELEASE_VERSION}"
           git push origin v"${RELEASE_VERSION}"
+        env:
+          RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
 
 
   bump_version:
