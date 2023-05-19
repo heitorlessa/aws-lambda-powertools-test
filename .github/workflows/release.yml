@@ -196,7 +196,7 @@ jobs:
         uses: ./.github/actions/download-artifact
         with:
           name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}
-          path: dist/
+          path: .
 
       # March 1st: PyPi test is under maintenance....
       - name: Upload to PyPi test
