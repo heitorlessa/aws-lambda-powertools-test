@@ -125,12 +125,6 @@ jobs:
       #     path: .
       #     key: ${{ needs.seal.outputs.INTEGRITY_HASH }}
 
-      - name: Debug cache restore
-        run: |
-          ls -l
-          ls -l .git/
-          ls -l aws_lambda_powertools
-
       - name: Install poetry
         run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
       - name: Set up Python
@@ -212,17 +206,20 @@ jobs:
     permissions:
       contents: write
     steps:
-      # # We need checkout action to configure Git references correctly
-      # # otherwise we'll bump into the error: fatal: could not read Username for 'https://github.com': No such device or address
-      # - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-      #   with:
-      #     ref: ${{ env.RELEASE_COMMIT }}
+      # We need checkout action to configure Git references correctly
+      # otherwise we'll bump into the error: fatal: could not read Username for 'https://github.com': No such device or address
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
 
       - name: Restore sealed source code
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
         with:
           name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
+
+      - name: Debug cache restore
+        run: ls -l
 
       - id: setup-git
         name: Git client setup and refresh tip
