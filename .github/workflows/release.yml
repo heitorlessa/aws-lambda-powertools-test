@@ -49,8 +49,58 @@ env:
   RELEASE_COMMIT: ${{ github.sha }}
 
 jobs:
+  quality_check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+        INTEGRITY_HASH: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+
+      # NOTE: we hash source code before any step to prevent source code tampering
+      # for example, dependencies might modify source code before our build step
+      - name: Create integrity hash from source code
+        id: integrity
+        run: echo "INTEGRITY_HASH=${SOURCE_CODE_HASH}" >> "$GITHUB_OUTPUT"
+        env:
+          # paths to hash and why they're important to protect
+          #
+          # aws_lambda_powertools/  - source code
+          # pyproject.toml          - project metadata
+          # poetry.lock             - project dependencies
+          # layer/                  - layer infrastructure and pipeline
+          # .github/                - github scripts and actions used in the release
+          # docs/                   - user guide documentation
+          # examples/               - user guide code snippets
+          SOURCE_CODE_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+
+      # NOTE: Cache artifact after the fact, so we can bump the version only once... IF integrity check passes
+      - name: Cache release artifact
+        id: cache-release-build
+        uses: actions/cache/save@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+        with:
+          path: .
+          key: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
+
+      - name: Install poetry
+        run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
+      - name: Set up Python
+        uses: actions/setup-python@57ded4d7d5e986d7296eab16560982c6dd7c923b # v4.6.0
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+      - name: Install dependencies
+        run: make dev
+      - name: Run all tests, linting and baselines
+        run: make pr
+
+
   build:
     runs-on: ubuntu-latest
+    needs: quality_check
     permissions:
       contents: read
     outputs:
@@ -58,9 +108,16 @@ jobs:
     env:
       RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+      # - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+      #   with:
+      #     ref: ${{ env.RELEASE_COMMIT }}
+
+      - name: Restore sealed source code
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
-          ref: ${{ env.RELEASE_COMMIT }}
+          path: .
+          key: ${{ needs.quality_check.outputs.INTEGRITY_HASH }}
+
       - name: Install poetry
         run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
       - name: Set up Python
@@ -75,11 +132,6 @@ jobs:
           RELEASE_VERSION="${RELEASE_TAG_VERSION:1}"
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> "$GITHUB_ENV"
           echo "RELEASE_VERSION=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
-      - name: Install dependencies
-        run: make dev
-      - name: Run all tests, linting and baselines
-        if: ${{ !inputs.skip_code_quality }}
-        run: make pr
       - name: Bump package version
         id: versioning
         run: poetry version "${RELEASE_VERSION}"
@@ -100,7 +152,7 @@ jobs:
           key: ${{ runner.os }}-${{ env.RELEASE_VERSION }}-${{ hashFiles('**/poetry.lock') }}
 
   release:
-    needs: build
+    needs: [build]
     environment: release
     runs-on: ubuntu-latest
     permissions:
@@ -108,9 +160,12 @@ jobs:
     env:
       RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-        with:
-          ref: ${{ env.RELEASE_COMMIT }}
+      # - name: Restore sealed source code
+      #   uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
+      #   with:
+      #     path: .
+      #     key: ${{ needs.quality_check.outputs.INTEGRITY_HASH }}
+
       - name: Restore release artifact from cache
         id: restore-release-build
         uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
@@ -126,16 +181,25 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
 
   create_tag:
-    needs: [build, release]
+    needs: [build, release, quality_check]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
       RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+      - name: Restore sealed source code
+        uses: actions/cache/restore@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
-          ref: ${{ env.RELEASE_COMMIT }}
+          path: .
+          key: ${{ needs.quality_check.outputs.INTEGRITY_HASH }}
+
+      - name: Install poetry
+        run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
+      - name: Bump package version
+        id: versioning
+        run: poetry version "${RELEASE_VERSION}"
+
       - id: setup-git
         name: Git client setup and refresh tip
         run: |
