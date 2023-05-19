@@ -101,7 +101,7 @@ jobs:
         uses: ./.github/actions/upload-artifact
         with:
           name: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
-          path: ./**
+          path: .
 
   # This job runs our automated test suite, complexity and security baselines
   # it ensures previously merged have been tested as part of the pull request process
