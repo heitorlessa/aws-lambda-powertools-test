@@ -149,9 +149,9 @@ jobs:
     env:
       RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-        with:
-          ref: ${{ env.RELEASE_COMMIT }}
+      # - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+      #   with:
+      #     ref: ${{ env.RELEASE_COMMIT }}
 
       - name: Restore sealed source code
         uses: ./.github/actions/download-artifact
