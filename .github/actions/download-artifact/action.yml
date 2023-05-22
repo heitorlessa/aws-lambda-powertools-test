@@ -1,13 +1,36 @@
 name: Download artifact
 description: Wrapper around GitHub's official action, with additional extraction before download
 
+# PROCESS
+#
+# 1. Downloads artifact using actions/download-artifact action
+# 2. Extracts and overwrites tarball previously uploaded
+# 3. Remove archive after extraction
+
+# NOTES
+#
+# Upload-artifact and download-artifact takes ~2m40s to upload 8MB
+# so this is custom action cuts down the entire operation to 1s
+# by uploading/extracting a tarball while relying on the official upload-artifact/download-artifact actions
+#
+
+# USAGE
+#
+# NOTE: Meant to be used with ./.github/actions/upload-artifact
+#
+# - name: Restore sealed source code
+# uses: ./.github/actions/download-artifact
+# with:
+#   name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+#   path: .
+
 # https://github.com/actions/download-artifact/blob/main/action.yml
 inputs:
   name:
     description: Artifact name
     required: true
   path:
-    description: Destination path
+    description: Destination path. By default, it will download to the current working directory.
     required: false
     default: .
 
