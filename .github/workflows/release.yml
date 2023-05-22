@@ -166,6 +166,7 @@ jobs:
       contents: read
     outputs:
       RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
+      INTEGRITY_HASH: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
     env:
       RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
     steps:
@@ -199,10 +200,19 @@ jobs:
           INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
+      - name: Create integrity hash
+        id: integrity
+        run: echo "INTEGRITY_HASH=${SOURCE_CODE_HASH}" >> "$GITHUB_OUTPUT"
+        env:
+          # paths to hash and why they're important to protect
+          #
+          # dist/  - package distribution build
+          SOURCE_CODE_HASH: ${{ hashFiles('dist/**')}}
+
       - name: Upload build artifact
         uses: ./.github/actions/upload-artifact
         with:
-          name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}
+          name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}-${{ steps.integrity.outputs.INTEGRITY_HASH}}
           path: dist/
 
   # This job uses release artifact to publish to PyPi
@@ -221,10 +231,10 @@ jobs:
         with:
           ref: ${{ env.RELEASE_COMMIT }}
 
-      - name: Restore sealed source code
+      - name: Restore sealed build
         uses: ./.github/actions/download-artifact
         with:
-          name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}
+          name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}-${{ needs.build.outputs.INTEGRITY_HASH }}
           path: .
 
       # NOTE: Ran out of time to create a composite action out of this
@@ -233,8 +243,8 @@ jobs:
       - name: Source code tampering check
         run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
         env:
-          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
-          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+          INTEGRITY_HASH: ${{ needs.build.outputs.INTEGRITY_HASH }}
+          CURRENT_HASH: ${{ hashFiles('dist/**')}}
 
       # March 1st: PyPi test is under maintenance....
       - name: Upload to PyPi test
