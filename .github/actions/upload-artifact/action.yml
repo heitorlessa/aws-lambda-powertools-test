@@ -61,7 +61,6 @@ runs:
     - name: Archive artifacts
       run: |
         tar --exclude-vcs \
-            --exclude "*.pyc" \
             -cvf "${ARCHIVE}" "${PATH_TO_ARCHIVE}"
       env:
         ARCHIVE: ${{ inputs.name }}.tar
