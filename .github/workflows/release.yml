@@ -134,10 +134,21 @@ jobs:
         with:
           python-version: "3.10"
           cache: "poetry"
+
       - name: Install dependencies
         run: make dev
       - name: Run all tests, linting and baselines
         run: make pr
+
+      # NOTE: Ran out of time to create a composite action out of this
+      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
+      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
+      - name: Source code tampering check
+        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        env:
+          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+
 
   # This job creates a release artifact (tar.gz, wheel)
   # it checks out code from release commit for custom actions to work
@@ -163,12 +174,6 @@ jobs:
           name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
 
-      - name: Source code tampering check
-        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
-        env:
-          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
-          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**', 'benchmark/**')}}
-
       - name: Install poetry
         run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
       - name: Set up Python
@@ -179,6 +184,15 @@ jobs:
 
       - name: Build python package and wheel
         run: poetry build
+
+      # NOTE: Ran out of time to create a composite action out of this
+      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
+      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
+      - name: Source code tampering check
+        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        env:
+          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
       - name: Upload build artifact
         uses: ./.github/actions/upload-artifact
@@ -208,6 +222,15 @@ jobs:
           name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
 
+      # NOTE: Ran out of time to create a composite action out of this
+      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
+      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
+      - name: Source code tampering check
+        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        env:
+          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+
       # March 1st: PyPi test is under maintenance....
       - name: Upload to PyPi test
         if: ${{ !inputs.skip_pypi }}
@@ -232,6 +255,15 @@ jobs:
         with:
           name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           path: .
+
+      # NOTE: Ran out of time to create a composite action out of this
+      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
+      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
+      - name: Source code tampering check
+        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        env:
+          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
       - name: Debug cache restore
         run: cat pyproject.toml
@@ -274,6 +306,15 @@ jobs:
 
       - name: Debug cache restore
         run: cat pyproject.toml
+
+      # NOTE: Ran out of time to create a composite action out of this
+      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
+      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
+      - name: Source code tampering check
+        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        env:
+          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
       - name: Create PR
         id: create-pr
