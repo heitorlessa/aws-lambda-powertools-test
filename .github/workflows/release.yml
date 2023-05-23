@@ -221,7 +221,7 @@ jobs:
   # otherwise the release commit will be used as the basis for the tag.
   # Later, we create a PR to update trunk with our newest release version (e.g., bump_version job)
   create_tag:
-    needs: [seal]
+    needs: [seal, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
