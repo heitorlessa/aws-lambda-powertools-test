@@ -358,11 +358,20 @@ jobs:
       actions: read # To read the workflow path.
       id-token: write # To sign the provenance.
       contents: write # To add assets to a release.
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@0779f7bec68e2bf54a7b0a32bf4763f25ab29702 # v1.6.0
+    # provenance fails if we use hash... it's a feature not a bug it seems
+    # https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md#referencing-the-slsa-generator
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.6.0
     with:
       base64-subjects: ${{ needs.provenance_hash.outputs.ENCODED_HASH }}
       upload-assets: true # Optional: Upload to a new release
-      upload-tag-name: "refs/tags/v${{ needs.seal.outputs.RELEASE_VERSION }}"
+      upload-tag-name: "v${{ needs.seal.outputs.RELEASE_VERSION }}"
+      # upload-tag-name: "refs/tags/v${{ needs.seal.outputs.RELEASE_VERSION }}"
+
+      ## Errors
+      #
+      # [Generator step]
+      # Invalid ref: 0779f7bec68e2bf54a7b0a32bf4763f25ab29702. Expected ref of the form refs/tags/vX.Y.Z
+      # TODO: Create an issue in SLSA to help investigate
 
   # This job compiles a Lambda Layer optimized for space and speed (e.g., Cython)
   # It then deploys to Layer's Beta and Prod account, including SAR Beta and Prod account.
