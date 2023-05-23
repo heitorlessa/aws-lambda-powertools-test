@@ -262,7 +262,7 @@ jobs:
         id: release_notes
         run: |
           DRAFT_RELEASE=$(gh release list | awk '$2 == "Draft" {print $1}')
-          DRAFT_RELEASE_CONTENT=$(gh release view "${DRAFT_RELEASE}" --json body --jq '.body')
+          DRAFT_RELEASE_CONTENT=$(gh release view "${DRAFT_RELEASE}" --json body --template '"{{ .body }}"')
           echo "RELEASE_NOTES=${DRAFT_RELEASE_CONTENT}" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
