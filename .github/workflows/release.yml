@@ -337,6 +337,32 @@ jobs:
           pull_request_title: "chore(ci): bump version to ${{ needs.seal.outputs.RELEASE_VERSION }}"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+  provenance_hash:
+    runs-on: ubuntu-latest
+    needs: [build, release]
+    outputs:
+      ENCODED_HASH: ${{ steps.encoded_hash.outputs.ENCODED_HASH }}
+    steps:
+      - name: Encode build hash
+        id: encoded_hash
+        run: |
+          encoded_hash=$(echo "${BUILD_INTEGRITY_HASH}" | base64 -w0)
+          echo "ENCODED_HASH=${encoded_hash}" >> "$GITHUB_OUTPUT"
+        env:
+          BUILD_INTEGRITY_HASH: ${{ needs.build.outputs.BUILD_INTEGRITY_HASH }}
+
+  provenance:
+    needs: [provenance_hash, seal, create_tag]
+    permissions:
+      actions: read # To read the workflow path.
+      id-token: write # To sign the provenance.
+      contents: write # To add assets to a release.
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@0779f7bec68e2bf54a7b0a32bf4763f25ab29702 # v1.6.0
+    with:
+      base64-subjects: ${{ needs.provenance_hash.outputs.ENCODED_HASH }}
+      upload-assets: true # Optional: Upload to a new release
+      upload-tag-name: v${{ needs.seal.outputs.RELEASE_VERSION }}
+
   # This job compiles a Lambda Layer optimized for space and speed (e.g., Cython)
   # It then deploys to Layer's Beta and Prod account, including SAR Beta and Prod account.
   # It uses canaries to attest Layers can be used and imported between stages.
