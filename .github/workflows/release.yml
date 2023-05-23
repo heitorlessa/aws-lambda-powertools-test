@@ -24,6 +24,10 @@ name: Release
 
 # See MAINTAINERS.md "Releasing a new version" for release mechanisms
 
+env:
+  RELEASE_COMMIT: ${{ github.sha }}
+  RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -47,20 +51,18 @@ on:
         type: boolean
         required: false
 
-env:
-  RELEASE_COMMIT: ${{ github.sha }}
-  RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
-
 jobs:
+
   # This job bumps the package version to the release version
-  # and caches source code with an integrity hash
+  # creates an integrity hash from the source code
+  # uploads the artifact with the integrity hash as the key name
   # so subsequent jobs can restore from a trusted point in time to prevent tampering
   seal:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     outputs:
-        INTEGRITY_HASH: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
+        SOURCE_CODE_HASH: ${{ steps.integrity.outputs.SOURCE_CODE_HASH }}
         RELEASE_VERSION: ${{ steps.release_version.outputs.RELEASE_VERSION }}
     steps:
       - name: Export release version
@@ -86,7 +88,7 @@ jobs:
 
       - name: Create integrity hash
         id: integrity
-        run: echo "INTEGRITY_HASH=${SOURCE_CODE_HASH}" >> "$GITHUB_OUTPUT"
+        run: echo "SOURCE_CODE_HASH=${HASH}" >> "$GITHUB_OUTPUT"
         env:
           # paths to hash and why they're important to protect
           #
@@ -97,21 +99,28 @@ jobs:
           # .github/                - github scripts and actions used in the release
           # docs/                   - user guide documentation
           # examples/               - user guide code snippets
-          SOURCE_CODE_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+          HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
       - name: Upload sealed source code
         uses: ./.github/actions/upload-artifact
         with:
-          name: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
+          name: source-${{ steps.integrity.outputs.SOURCE_CODE_HASH }}
           path: .
+
 
   # This job runs our automated test suite, complexity and security baselines
   # it ensures previously merged have been tested as part of the pull request process
+  #
+  # NOTE
+  #
+  # we don't upload the artifact after testing to prevent any tampering of our source code dependencies
   quality_check:
     needs: seal
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
       # NOTE: we need actions/checkout to configure git first (pre-commit hooks in make dev)
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
@@ -121,7 +130,7 @@ jobs:
       - name: Restore sealed source code
         uses: ./.github/actions/download-artifact
         with:
-          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
           path: .
 
       - name: Debug cache restore
@@ -134,42 +143,27 @@ jobs:
         with:
           python-version: "3.10"
           cache: "poetry"
-
       - name: Install dependencies
         run: make dev
       - name: Run all tests, linting and baselines
         run: make pr
 
-      # NOTE: Ran out of time to create a composite action out of this
-      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
-      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
-      #
-      # NOTE
-      #
-      # Tests alter code (.pyc) and therefore will always fail
-      #
-      # - name: Source code tampering check
-      #   run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
-      #   env:
-      #     INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
-      #     CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
-
-
   # This job creates a release artifact (tar.gz, wheel)
   # it checks out code from release commit for custom actions to work
   # then restores the sealed source code (overwrites any potential tampering)
-  # it's done separately from release job to enforce least privilege
+  # it's done separately from release job to enforce least privilege.
+  # We export just the final build artifact for release (release-<integrity-hash>)
   build:
     runs-on: ubuntu-latest
     needs: [quality_check, seal]
     permissions:
       contents: read
     outputs:
-      RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
-      INTEGRITY_HASH: ${{ steps.integrity.outputs.INTEGRITY_HASH }}
+      BUILD_INTEGRITY_HASH: ${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH }}
     env:
-      RELEASE_TAG_VERSION: ${{ inputs.version_to_publish }}
+      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
+      # NOTE: we need actions/checkout to configure git first (pre-commit hooks in make dev)
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
           ref: ${{ env.RELEASE_COMMIT }}
@@ -177,7 +171,7 @@ jobs:
       - name: Restore sealed source code
         uses: ./.github/actions/download-artifact
         with:
-          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
           path: .
 
       - name: Install poetry
@@ -192,32 +186,32 @@ jobs:
         run: poetry build
 
       # NOTE: Ran out of time to create a composite action out of this
-      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
+      # because GitHub Action inputs do not support arrays and it became fragile to join multiple strings then split
       # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
       - name: Source code tampering check
-        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
         env:
-          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
-      - name: Create integrity hash
+      - name: Create integrity hash for build artifact
         id: integrity
-        run: echo "INTEGRITY_HASH=${SOURCE_CODE_HASH}" >> "$GITHUB_OUTPUT"
+        run: echo "BUILD_INTEGRITY_HASH=${HASH}" >> "$GITHUB_OUTPUT"
         env:
           # paths to hash and why they're important to protect
           #
           # dist/  - package distribution build
-          SOURCE_CODE_HASH: ${{ hashFiles('dist/**')}}
+          HASH: ${{ hashFiles('dist/**')}}
 
       - name: Upload build artifact
         uses: ./.github/actions/upload-artifact
         with:
-          name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}-${{ steps.integrity.outputs.INTEGRITY_HASH}}
+          name: build-${{ steps.integrity.outputs.INTEGRITY_HASH}}
           path: dist/
 
   # This job uses release artifact to publish to PyPi
   # it exchanges JWT tokens with GitHub to obtain PyPi credentials
-  # since it's already registered as a Trusted Publisher
+  # since it's already registered as a Trusted Publisher.
+  # It uses the sealed build artifact (.whl, .tar.gz) to release it
   release:
     needs: [build, seal]
     environment: release
@@ -225,8 +219,10 @@ jobs:
     permissions:
       id-token: write # OIDC for PyPi Trusted Publisher feature
     env:
-      RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
+      RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
+      BUILD_INTEGRITY_HASH: ${{ needs.build.outputs.BUILD_INTEGRITY_HASH }}
     steps:
+      # NOTE: we need actions/checkout in order to use our local actions (e.g., ./.github/actions)
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
           ref: ${{ env.RELEASE_COMMIT }}
@@ -234,17 +230,17 @@ jobs:
       - name: Restore sealed build
         uses: ./.github/actions/download-artifact
         with:
-          name: release-${{ needs.seal.outputs.INTEGRITY_HASH }}-${{ needs.build.outputs.INTEGRITY_HASH }}
+          name: build-${{ env.BUILD_INTEGRITY_HASH }}
           path: .
 
-      # NOTE: Ran out of time to create a composite action out of this
-      # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
-      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
       - name: Source code tampering check
-        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        run: test "${BUILD_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
         env:
-          INTEGRITY_HASH: ${{ needs.build.outputs.INTEGRITY_HASH }}
           CURRENT_HASH: ${{ hashFiles('dist/**')}}
+
+      # - name: Upload to PyPi prod
+      #   if: ${{ !inputs.skip_pypi }}
+      #   uses: pypa/gh-action-pypi-publish@a56da0b891b3dc519c7ee3284aff1fad93cc8598 # v1.8.6
 
       # March 1st: PyPi test is under maintenance....
       - name: Upload to PyPi test
@@ -253,35 +249,38 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
 
+  # We create a Git Tag using our release version (e.g., v2.16.0)
+  # using our sealed source code we created earlier.
+  # Because we bumped version of our project as part of CI
+  # we need to add this into git before pushing the tag
+  # otherwise the release commit will be used as the basis for the tag.
+  # Later, we create a PR to update trunk with our newest release version (e.g., bump_version job)
   create_tag:
     needs: [release, seal]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
       # NOTE: we need actions/checkout to authenticate and configure git first
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
           ref: ${{ env.RELEASE_COMMIT }}
 
-      # then restore everything but .git
       - name: Restore sealed source code
         uses: ./.github/actions/download-artifact
         with:
-          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
           path: .
 
       # NOTE: Ran out of time to create a composite action out of this
       # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
       # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
       - name: Source code tampering check
-        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
         env:
-          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
-
-      - name: Debug cache restore
-        run: cat pyproject.toml
 
       - id: setup-git
         name: Git client setup and refresh tip
@@ -299,36 +298,34 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
 
-
+  # Creates a PR with the latest version we've just released
+  # since our trunk is protected against any direct pushes from automation
   bump_version:
     needs: [release, seal]
     permissions:
       contents: write  # create-pr action creates a temporary branch
       pull-requests: write # create-pr action creates a PR using the temporary branch
     runs-on: ubuntu-latest
+    env:
+      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
       # NOTE: we need actions/checkout to authenticate and configure git first
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
         with:
           ref: ${{ env.RELEASE_COMMIT }}
 
-      # then restore everything but .git
       - name: Restore sealed source code
         uses: ./.github/actions/download-artifact
         with:
-          name: ${{ needs.seal.outputs.INTEGRITY_HASH }}
+          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
           path: .
-
-      - name: Debug cache restore
-        run: cat pyproject.toml
 
       # NOTE: Ran out of time to create a composite action out of this
       # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
       # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
       - name: Source code tampering check
-        run: test "${INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
         env:
-          INTEGRITY_HASH: ${{ needs.seal.outputs.INTEGRITY_HASH }}
           CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
       - name: Create PR
@@ -340,10 +337,17 @@ jobs:
           pull_request_title: "chore(ci): bump version to ${{ needs.seal.outputs.RELEASE_VERSION }}"
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-  # # NOTE: Watch out for the depth limit of 4 nested workflow_calls.
-  # # publish_layer -> publish_v2_layer -> reusable_deploy_v2_layer_stack
+  # This job compiles a Lambda Layer optimized for space and speed (e.g., Cython)
+  # It then deploys to Layer's Beta and Prod account, including SAR Beta and Prod account.
+  # It uses canaries to attest Layers can be used and imported between stages.
+  # Lastly, it updates our documentation with the latest Layer ARN for all regions
+  #
+  # NOTE
+  #
+  # Watch out for the depth limit of 4 nested workflow_calls.
+  # publish_layer -> publish_v2_layer -> reusable_deploy_v2_layer_stack
   # publish_layer:
-  #   needs: [build, release, create_tag]
+  #   needs: [seal, release, create_tag]
   #   secrets: inherit
   #   permissions:
   #     id-token: write
@@ -352,12 +356,11 @@ jobs:
   #     pull-requests: write
   #   uses: ./.github/workflows/publish_v2_layer.yml
   #   with:
-  #     latest_published_version: ${{ needs.build.outputs.RELEASE_VERSION }}
+  #     latest_published_version: ${{ needs.seal.outputs.RELEASE_VERSION }}
   #     pre_release: ${{ inputs.pre_release }}
 
-
   # post_release:
-  #   needs: [build, release, publish_layer]
+  #   needs: [seal, release, publish_layer]
   #   permissions:
   #     contents: read
   #     issues: write
@@ -365,9 +368,11 @@ jobs:
   #     pull-requests: write
   #   runs-on: ubuntu-latest
   #   env:
-  #     RELEASE_VERSION: ${{ needs.build.outputs.RELEASE_VERSION }}
+  #     RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
   #   steps:
   #     - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+  #       with:
+  #         ref: ${{ env.RELEASE_COMMIT }}
   #     - name: Close issues related to this release
   #       uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
   #       with:
