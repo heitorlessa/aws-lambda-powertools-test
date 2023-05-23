@@ -342,6 +342,7 @@ jobs:
     needs: [build, release]
     outputs:
       ENCODED_HASH: ${{ steps.encoded_hash.outputs.ENCODED_HASH }}
+    permissions: {}  # no permissions necessary
     steps:
       - name: Encode build hash
         id: encoded_hash
