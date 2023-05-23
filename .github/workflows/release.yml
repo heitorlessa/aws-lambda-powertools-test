@@ -362,7 +362,7 @@ jobs:
     with:
       base64-subjects: ${{ needs.provenance_hash.outputs.ENCODED_HASH }}
       upload-assets: true # Optional: Upload to a new release
-      upload-tag-name: v${{ needs.seal.outputs.RELEASE_VERSION }}
+      upload-tag-name: "refs/tags/v${{ needs.seal.outputs.RELEASE_VERSION }}"
 
   # This job compiles a Lambda Layer optimized for space and speed (e.g., Cython)
   # It then deploys to Layer's Beta and Prod account, including SAR Beta and Prod account.
