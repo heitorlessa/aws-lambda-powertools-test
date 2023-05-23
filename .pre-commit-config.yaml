@@ -46,4 +46,4 @@ repos:
     rev: v1.6.23
     hooks:
       - id: actionlint-docker
-        args: [-pyflakes=, -ignore='SC2129']
+        args: [-pyflakes=, -ignore=SC2129]
