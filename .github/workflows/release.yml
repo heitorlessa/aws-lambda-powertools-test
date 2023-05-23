@@ -255,6 +255,9 @@ jobs:
           git config user.email "aws-lambda-powertools-feedback@amazon.com"
           git config remote.origin.url >&-
 
+      # NOTE: GitHub overwrites Release Drafter notes for whatever message goes into the git tag
+      # this means we need to recover the last draft auto-generated release notes
+      # and add as part of the git tag message
       - name: Get latest release draft notes
         id: release_notes
         run: |
