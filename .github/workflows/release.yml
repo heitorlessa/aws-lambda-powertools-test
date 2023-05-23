@@ -214,47 +214,6 @@ jobs:
         working-directory: dist
         run: echo "ATTESTATION_HASHES=$(sha256sum ./* | base64 -w0)" >> "$GITHUB_OUTPUT"
 
-  # This job uses release artifact to publish to PyPi
-  # it exchanges JWT tokens with GitHub to obtain PyPi credentials
-  # since it's already registered as a Trusted Publisher.
-  # It uses the sealed build artifact (.whl, .tar.gz) to release it
-  release:
-    needs: [build, seal]
-    environment: release
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write # OIDC for PyPi Trusted Publisher feature
-    env:
-      RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
-      BUILD_INTEGRITY_HASH: ${{ needs.build.outputs.BUILD_INTEGRITY_HASH }}
-    steps:
-      # NOTE: we need actions/checkout in order to use our local actions (e.g., ./.github/actions)
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
-        with:
-          ref: ${{ env.RELEASE_COMMIT }}
-
-      - name: Restore sealed build
-        uses: ./.github/actions/download-artifact
-        with:
-          name: build-${{ env.BUILD_INTEGRITY_HASH }}
-          path: .
-
-      - name: Source code tampering check
-        run: test "${BUILD_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
-        env:
-          CURRENT_HASH: ${{ hashFiles('dist/**')}}
-
-      # - name: Upload to PyPi prod
-      #   if: ${{ !inputs.skip_pypi }}
-      #   uses: pypa/gh-action-pypi-publish@a56da0b891b3dc519c7ee3284aff1fad93cc8598 # v1.8.6
-
-      # March 1st: PyPi test is under maintenance....
-      - name: Upload to PyPi test
-        if: ${{ !inputs.skip_pypi }}
-        uses: pypa/gh-action-pypi-publish@a56da0b891b3dc519c7ee3284aff1fad93cc8598 # v1.8.6
-        with:
-          repository-url: https://test.pypi.org/legacy/
-
   # We create a Git Tag using our release version (e.g., v2.16.0)
   # using our sealed source code we created earlier.
   # Because we bumped version of our project as part of CI
@@ -262,7 +221,7 @@ jobs:
   # otherwise the release commit will be used as the basis for the tag.
   # Later, we create a PR to update trunk with our newest release version (e.g., bump_version job)
   create_tag:
-    needs: [release, seal]
+    needs: [seal]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -304,6 +263,64 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
 
+  # This job attests our build process and
+  # uploads a provenance file (multiple.intoto.jsonl)
+  # that can be verified by anyone, and includes all steps our GH Actions release took to generate that build
+  provenance:
+    needs: [seal, build, create_tag]
+    permissions:
+      actions: read # To read the workflow path.
+      id-token: write # To sign the provenance.
+      contents: write # To add assets to a release.
+    # provenance fails if we use hash... it's a feature not a bug it seems
+    # https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md#referencing-the-slsa-generator
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.6.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.ATTESTATION_HASHES }}
+      upload-assets: true # Optional: Upload to a new release
+      upload-tag-name: "v${{ needs.seal.outputs.RELEASE_VERSION }}"
+
+  # This job uses release artifact to publish to PyPi
+  # it exchanges JWT tokens with GitHub to obtain PyPi credentials
+  # since it's already registered as a Trusted Publisher.
+  # It uses the sealed build artifact (.whl, .tar.gz) to release it
+  release:
+    needs: [build, seal, provenance]
+    environment: release
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC for PyPi Trusted Publisher feature
+    env:
+      RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
+      BUILD_INTEGRITY_HASH: ${{ needs.build.outputs.BUILD_INTEGRITY_HASH }}
+    steps:
+      # NOTE: we need actions/checkout in order to use our local actions (e.g., ./.github/actions)
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+
+      - name: Restore sealed build
+        uses: ./.github/actions/download-artifact
+        with:
+          name: build-${{ env.BUILD_INTEGRITY_HASH }}
+          path: .
+
+      - name: Source code tampering check
+        run: test "${BUILD_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+        env:
+          CURRENT_HASH: ${{ hashFiles('dist/**')}}
+
+      # - name: Upload to PyPi prod
+      #   if: ${{ !inputs.skip_pypi }}
+      #   uses: pypa/gh-action-pypi-publish@a56da0b891b3dc519c7ee3284aff1fad93cc8598 # v1.8.6
+
+      # March 1st: PyPi test is under maintenance....
+      - name: Upload to PyPi test
+        if: ${{ !inputs.skip_pypi }}
+        uses: pypa/gh-action-pypi-publish@a56da0b891b3dc519c7ee3284aff1fad93cc8598 # v1.8.6
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
   # Creates a PR with the latest version we've just released
   # since our trunk is protected against any direct pushes from automation
   bump_version:
@@ -342,27 +359,6 @@ jobs:
           temp_branch_prefix: "ci-bump"
           pull_request_title: "chore(ci): bump version to ${{ needs.seal.outputs.RELEASE_VERSION }}"
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
-  provenance:
-    needs: [seal, build, create_tag]
-    permissions:
-      actions: read # To read the workflow path.
-      id-token: write # To sign the provenance.
-      contents: write # To add assets to a release.
-    # provenance fails if we use hash... it's a feature not a bug it seems
-    # https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md#referencing-the-slsa-generator
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.6.0
-    with:
-      base64-subjects: ${{ needs.build.outputs.ATTESTATION_HASHES }}
-      upload-assets: true # Optional: Upload to a new release
-      upload-tag-name: "v${{ needs.seal.outputs.RELEASE_VERSION }}"
-      # upload-tag-name: "refs/tags/v${{ needs.seal.outputs.RELEASE_VERSION }}"
-
-      ## Errors
-      #
-      # [Generator step]
-      # Invalid ref: 0779f7bec68e2bf54a7b0a32bf4763f25ab29702. Expected ref of the form refs/tags/vX.Y.Z
-      # TODO: Create an issue in SLSA to help investigate
 
   # This job compiles a Lambda Layer optimized for space and speed (e.g., Cython)
   # It then deploys to Layer's Beta and Prod account, including SAR Beta and Prod account.
