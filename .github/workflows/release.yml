@@ -227,6 +227,8 @@ jobs:
       contents: write
     env:
       SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+    outputs:
+      RELEASE_NOTES: ${{ steps.release_notes.outputs.RELEASE_NOTES }}
     steps:
       # NOTE: we need actions/checkout to authenticate and configure git first
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab  # v3.5.2
@@ -247,18 +249,26 @@ jobs:
         env:
           CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
-      - id: setup-git
-        name: Git client setup and refresh tip
+      - name: Git client setup
         run: |
           git config user.name "Powertools bot"
           git config user.email "aws-lambda-powertools-feedback@amazon.com"
           git config remote.origin.url >&-
 
+      - name: Get latest release draft notes
+        id: release_notes
+        run: |
+          DRAFT_RELEASE=$(gh release list -L 1 | head -n 1 | awk '{print $1}')
+          DRAFT_RELEASE_CONTENT=$(gh release view "${DRAFT_RELEASE}" --json body --jq '.body')
+          echo "RELEASE_NOTES=${DRAFT_RELEASE_CONTENT}" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Git Tag
         run: |
           git add pyproject.toml
           git commit -m "chore: version bump"
-          git tag -a v"${RELEASE_VERSION}" -m "release_version: v${RELEASE_VERSION}"
+          git tag -a v"${RELEASE_VERSION}" -m "${{ steps.release_notes.outputs.RELEASE_NOTES}}"
           git push origin v"${RELEASE_VERSION}"
         env:
           RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
