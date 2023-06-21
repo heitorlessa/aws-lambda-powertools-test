@@ -291,7 +291,6 @@ jobs:
         run: |
           git add pyproject.toml aws_lambda_powertools/shared/version.py
           git commit -m "chore: version bump"
-          git pull --tags
           git tag -a v"${RELEASE_VERSION}" -m "release_version: v${RELEASE_VERSION}"
           git push origin v"${RELEASE_VERSION}"
         env:

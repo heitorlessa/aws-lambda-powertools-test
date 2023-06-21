@@ -1,0 +1,52 @@
+# Standalone workflow to update changelog if necessary
+name: Adhoc test
+
+on:
+  workflow_dispatch:
+
+env:
+  BRANCH: develop
+  ORIGIN: heitorlessa/aws-lambda-powertools-python-test
+  HASH_PROJECT_DEPENDENCIES: "poetry.lock"
+  HASH_PROJECT_METADATA: "pyproject.toml"
+  HASH_DOCUMENTATION: "docs/**"
+  HASH_EXAMPLES_CODE: "examples/**"
+  HASH_GITHUB_CODE: ".github/**"
+  HASH_SOURCE_CODE: "aws_lambda_powertools/**"
+  HASH_LAYER_CODE: "layer/**"
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      FORMATTED_HASH: ${{ steps.integrity.outputs.FORMATTED_HASH }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: "Generate latest changelog"
+        run: make changelog
+      - name: Create integrity hash
+        id: integrity
+        run: echo "FORMATTED_HASH=${HASH}" >> "$GITHUB_OUTPUT"
+        env:
+          # paths to hash and why they're important to protect
+          #
+          # aws_lambda_powertools/  - source code
+          # pyproject.toml          - project metadata
+          # poetry.lock             - project dependencies
+          # layer/                  - layer infrastructure and pipeline
+          # .github/                - github scripts and actions used in the release
+          # docs/                   - user guide documentation
+          # examples/               - user guide code snippets
+          HASH: ${{ hashFiles(format('{0}', env.HASH_PROJECT_DEPENDENCIES), format('{0}', env.HASH_PROJECT_METADATA), format('{0}', env.HASH_DOCUMENTATION), format('{0}', env.HASH_EXAMPLES_CODE), format('{0}', env.HASH_GITHUB_CODE), format('{0}', env.HASH_SOURCE_CODE), format('{0}', env.HASH_LAYER_CODE)) }}
+      - name: Debug output
+        run: |
+          echo "Formatted hash: ${FORMATTED_HASH}"
+          echo "Unformatted hash: ${UNFORMATTED_HASH}"
+
+          echo "* Formatted hash: ${FORMATTED_HASH} <br/> * Unformatted hash: ${UNFORMATTED_HASH}" >>"$GITHUB_STEP_SUMMARY"
+        env:
+          FORMATTED_HASH: ${{ steps.integrity.outputs.FORMATTED_HASH }}
+          UNFORMATTED_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+
