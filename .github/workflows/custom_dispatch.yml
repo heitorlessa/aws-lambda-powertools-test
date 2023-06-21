@@ -40,13 +40,23 @@ jobs:
           # docs/                   - user guide documentation
           # examples/               - user guide code snippets
           HASH: ${{ hashFiles(format('{0}', env.HASH_PROJECT_DEPENDENCIES), format('{0}', env.HASH_PROJECT_METADATA), format('{0}', env.HASH_DOCUMENTATION), format('{0}', env.HASH_EXAMPLES_CODE), format('{0}', env.HASH_GITHUB_CODE), format('{0}', env.HASH_SOURCE_CODE), format('{0}', env.HASH_LAYER_CODE)) }}
+          # HASH: |
+          #       ${{ hashFiles(
+          #         format('{0}', env.HASH_PROJECT_DEPENDENCIES),
+          #         format('{0}', env.HASH_PROJECT_METADATA),
+          #         format('{0}', env.HASH_DOCUMENTATION),
+          #         format('{0}', env.HASH_EXAMPLES_CODE),
+          #         format('{0}', env.HASH_GITHUB_CODE),
+          #         format('{0}', env.HASH_SOURCE_CODE),
+          #         format('{0}', env.HASH_LAYER_CODE))
+          #       }}
       - name: Debug output
         run: |
           echo "Formatted hash: ${FORMATTED_HASH}"
           echo "Unformatted hash: ${UNFORMATTED_HASH}"
 
-          echo "* Formatted hash: ${FORMATTED_HASH} <br/> * Unformatted hash: ${UNFORMATTED_HASH}" >>"$GITHUB_STEP_SUMMARY"
+          echo "* Formatted hash: ${FORMATTED_HASH} <br/>* Unformatted hash: ${UNFORMATTED_HASH}" >>"$GITHUB_STEP_SUMMARY"
         env:
           FORMATTED_HASH: ${{ steps.integrity.outputs.FORMATTED_HASH }}
-          UNFORMATTED_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
-
+          UNFORMATTED_HASH: ${{ hashFiles('poetry.lock', 'pyproject.toml', 'docs/**', 'examples/**', 'github/**', 'aws_lambda_powertools/**', 'layer/**')}}
+          # UNFORMATTED_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
