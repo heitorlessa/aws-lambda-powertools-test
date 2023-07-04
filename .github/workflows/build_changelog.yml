@@ -11,6 +11,10 @@ env:
   BRANCH: develop
   ORIGIN: heitorlessa/aws-lambda-powertools-python-test
 
+
+permissions:
+  contents: read
+
 jobs:
   changelog:
     permissions:
