@@ -222,7 +222,7 @@ jobs:
   provenance:
     needs: [seal, build]
     permissions:
-      contents: read # checkout code
+      contents: write # nested job explicitly require despite upload assets being set to false
       actions: read # To read the workflow path.
       id-token: write # To sign the provenance.
     # provenance fails if we use hash... it's a feature not a bug it seems
