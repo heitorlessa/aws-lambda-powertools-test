@@ -321,25 +321,13 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
 
-      - name: Download the provenance
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+      - name: Upload provenance
+        id: upload-provenance
+        uses: ./.github/actions/upload-release-provenance
         with:
-          name: ${{needs.provenance.outputs.provenance-name}}
-
-      - name: Update draft release tag to release commit tag
-        run: |
-          CURRENT_DRAFT_RELEASE=$(gh release list | awk '{ if ($2 == "Draft") print $1}')
-          gh release edit "${CURRENT_DRAFT_RELEASE}" --tag v"${RELEASE_VERSION}"
-        env:
-          RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload provenance to release tag
-        run: gh release upload v"${RELEASE_VERSION}" "${PROVENANCE_FILE}"
-        env:
-          RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
-          PROVENANCE_FILE: ${{needs.provenance.outputs.provenance-name}}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          release_version: ${{ needs.seal.outputs.RELEASE_VERSION }}
+          provenance_name: ${{needs.provenance.outputs.provenance-name}}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # Creates a PR with the latest version we've just released
   # since our trunk is protected against any direct pushes from automation
