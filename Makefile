@@ -110,4 +110,4 @@ mypy:
 
 
 dev-version-plugin:
-	poetry self add git+https://github.com/monim67/poetry-bumpversion@c90cdf2141d50b1cd0dc4de6de956a1f1b03e8fe
+	poetry self add git+https://github.com/monim67/poetry-bumpversion@ef49c63acef7fe8680789ddb31f376cc898f0012

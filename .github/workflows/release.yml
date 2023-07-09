@@ -83,7 +83,7 @@ jobs:
       - name: Install poetry
         run: |
           pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
-          pipx inject poetry git+https://github.com/monim67/poetry-bumpversion@c90cdf2141d50b1cd0dc4de6de956a1f1b03e8fe # v0.3.0
+          pipx inject poetry git+https://github.com/monim67/poetry-bumpversion@ef49c63acef7fe8680789ddb31f376cc898f0012 # v0.3.0
 
       - name: Bump package version
         id: versioning
