@@ -13,8 +13,8 @@ SSM_PARAM_LAYER_ARM64_ARN: str = "/layers/powertools-layer-v2-arm64-arn"
 
 if not POWERTOOLS_VERSION:
     raise ValueError(
-        "Please set the version for Powertools by passing the '--context version=<version>' parameter to the CDK "
-        "synth step."
+        "Please set the version for Powertools for AWS Lambda (Python) by passing the '--context version=<version>' parameter to the CDK "  # noqa: E501
+        "synth step.",
     )
 
 LayerStack(

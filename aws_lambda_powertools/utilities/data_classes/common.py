@@ -1,17 +1,31 @@
 import base64
 import json
 from collections.abc import Mapping
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 from aws_lambda_powertools.shared.headers_serializer import BaseHeadersSerializer
+from aws_lambda_powertools.utilities.data_classes.shared_functions import (
+    get_header_value,
+    get_query_string_value,
+)
 
 
 class DictWrapper(Mapping):
     """Provides a single read only access to a wrapper dict"""
 
-    def __init__(self, data: Dict[str, Any]):
+    def __init__(self, data: Dict[str, Any], json_deserializer: Optional[Callable] = None):
+        """
+        Parameters
+        ----------
+        data : Dict[str, Any]
+            Lambda Event Source Event payload
+        json_deserializer : Callable, optional
+            function to deserialize `str`, `bytes`, `bytearray` containing a JSON document to a Python `obj`,
+            by default json.loads
+        """
         self._data = data
         self._json_data: Optional[Any] = None
+        self._json_deserializer = json_deserializer or json.loads
 
     def __getitem__(self, key: str) -> Any:
         return self._data[key]
@@ -80,30 +94,10 @@ class DictWrapper(Mapping):
         return self._data
 
 
-def get_header_value(
-    headers: Dict[str, str], name: str, default_value: Optional[str], case_sensitive: Optional[bool]
-) -> Optional[str]:
-    """Get header value by name"""
-    # If headers is NoneType, return default value
-    if not headers:
-        return default_value
-
-    if case_sensitive:
-        return headers.get(name, default_value)
-    name_lower = name.lower()
-
-    return next(
-        # Iterate over the dict and do a case-insensitive key comparison
-        (value for key, value in headers.items() if key.lower() == name_lower),
-        # Default value is returned if no matches was found
-        default_value,
-    )
-
-
 class BaseProxyEvent(DictWrapper):
     @property
     def headers(self) -> Dict[str, str]:
-        return self["headers"]
+        return self.get("headers") or {}
 
     @property
     def query_string_parameters(self) -> Optional[Dict[str, str]]:
@@ -122,7 +116,7 @@ class BaseProxyEvent(DictWrapper):
     def json_body(self) -> Any:
         """Parses the submitted body as json"""
         if self._json_data is None:
-            self._json_data = json.loads(self.decoded_body)
+            self._json_data = self._json_deserializer(self.decoded_body)
         return self._json_data
 
     @property
@@ -156,11 +150,18 @@ class BaseProxyEvent(DictWrapper):
         str, optional
             Query string parameter value
         """
-        params = self.query_string_parameters
-        return default_value if params is None else params.get(name, default_value)
+        return get_query_string_value(
+            query_string_parameters=self.query_string_parameters,
+            name=name,
+            default_value=default_value,
+        )
 
+    # Maintenance: missing @overload to ensure return type is a str when default_value is set
     def get_header_value(
-        self, name: str, default_value: Optional[str] = None, case_sensitive: Optional[bool] = False
+        self,
+        name: str,
+        default_value: Optional[str] = None,
+        case_sensitive: Optional[bool] = False,
     ) -> Optional[str]:
         """Get header value by name
 
@@ -177,7 +178,12 @@ class BaseProxyEvent(DictWrapper):
         str, optional
             Header value
         """
-        return get_header_value(self.headers, name, default_value, case_sensitive)
+        return get_header_value(
+            headers=self.headers,
+            name=name,
+            default_value=default_value,
+            case_sensitive=case_sensitive,
+        )
 
     def header_serializer(self) -> BaseHeadersSerializer:
         raise NotImplementedError()

@@ -38,7 +38,7 @@ class Layer(Construct):
         layer_version_name: str,
         powertools_version: str,
         architecture: Optional[Architecture] = None,
-        **kwargs
+        **kwargs  # noqa: COM812
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -72,7 +72,7 @@ class LayerStack(Stack):
         powertools_version: str,
         ssm_parameter_layer_arn: str,
         ssm_parameter_layer_arm64_arn: str,
-        **kwargs
+        **kwargs  # noqa: COM812
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
@@ -112,7 +112,7 @@ class LayerStack(Stack):
                 "SingleVersionArn",
                 parameter_name=ssm_parameter_layer_arn,
                 string_value=layer_single.layer_version_arn,
-            )
+            )  # noqa: COM812
         ).add(ApplyCondition(has_no_arm64_condition))
 
         # The following code is used when the region has support for ARM64 Lambdas. In this case, we explicitly
@@ -135,7 +135,7 @@ class LayerStack(Stack):
                 "VersionArn",
                 parameter_name=ssm_parameter_layer_arn,
                 string_value=layer.layer_version_arn,
-            )
+            )  # noqa: COM812
         ).add(ApplyCondition(has_arm64_condition))
 
         CfnOutput(
@@ -171,5 +171,5 @@ class LayerStack(Stack):
         )
 
         Aspects.of(
-            CfnOutput(self, "LatestLayerArm64Arn", value=layer_arm64.layer_version_arn)
+            CfnOutput(self, "LatestLayerArm64Arn", value=layer_arm64.layer_version_arn)  # noqa: COM812
         ).add(ApplyCondition(has_arm64_condition))

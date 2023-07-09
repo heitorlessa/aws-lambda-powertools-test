@@ -1,79 +1,36 @@
 name: Docs
 
-on:
-  workflow_dispatch:
-    inputs:
-      take:
-        description: "Take number"
-        required: true
-  # push:
-  #   branches:
-  #     - develop
-  #   paths:
-  #     - "docs/**"
-  #     - "mkdocs.yml"
-  #     - "examples/**"
+# PROCESS
+#
+# 1. Build User Guide and API docs
+# 2. Publish to GitHub Pages
+# 3. Publish to S3 (new home)
 
-env:
-  TEMP_BRANCH_PREFIX: "ci-docs"
-  PR_TITLE: "chore(ci): docs rebuild"
+# USAGE
+#
+# Always triggered on PR merge when changes in documentation changes occur.
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "examples/**"
+      - "CHANGELOG.md"
+
+permissions:
+  contents: read
 
 jobs:
-
-  docs_pr:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    outputs:
-      TEMP_BRANCH: ${{ steps.create_pr.outputs.TEMP_BRANCH }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Git client setup and refresh tip
-        run: |
-          git config user.name "Release bot"
-          git config user.email "aws-devax-open-source@amazon.com"
-          git config pull.rebase true
-          git config remote.origin.url >&-
-      - name: Update docs inflight
-        run: echo "!!! danger \"Testing new docs pr mechanism take ${ATTEMPT}\"" >> docs/index.md
-        env:
-          ATTEMPT: ${{ inputs.take }}
-      - name: Create PR
-        id: create_pr
-        run: |
-          bash .github/scripts/create_pr_for_staged_changes.sh docs mkdocs.yml examples
-          echo TEMP_BRANCH="${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
-        env:
-          PR_TITLE: ${{ env.PR_TITLE }}
-          TEMP_BRANCH_PREFIX: ${{ env.TEMP_BRANCH_PREFIX }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Cleanup orphaned branch
-        if: failure()
-        run: git push origin --delete "${TEMP_BRANCH_PREFIX}"-"${GITHUB_RUN_ID}" || echo "Must have failed before creating temporary branch; no cleanup needed."
-        env:
-          TEMP_BRANCH_PREFIX: ${{ env.TEMP_BRANCH_PREFIX }}
-
   release-docs:
-    needs: docs_pr
     permissions:
-      contents: write
-      pages: write
+      contents: write  # push to gh-pages
+      pages: write     # deploy gh-pages website
+      id-token: write  # trade JWT token for AWS credentials in AWS Docs account
+    secrets: inherit
     uses: ./.github/workflows/reusable_publish_docs.yml
     with:
       version: develop
       alias: stage
-      git_ref: ${{ needs.docs_pr.outputs.TEMP_BRANCH }}
-
-# Maintenance: Only necessary in repo migration
-# - name: Create redirect from old docs
-#   run: |
-#     git checkout gh-pages
-#     test -f 404.html && echo "Redirect already set" && exit 0
-#     git checkout develop -- 404.html
-#     git add 404.html
-#     git commit -m "chore: set docs redirect" --no-verify
-#     git push origin gh-pages -f

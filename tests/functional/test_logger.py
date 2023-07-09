@@ -145,7 +145,11 @@ def test_inject_lambda_context_log_event_request(lambda_context, stdout, lambda_
 
 
 def test_inject_lambda_context_log_event_request_env_var(
-    monkeypatch, lambda_context, stdout, lambda_event, service_name
+    monkeypatch,
+    lambda_context,
+    stdout,
+    lambda_event,
+    service_name,
 ):
     # GIVEN Logger is initialized
     monkeypatch.setenv("POWERTOOLS_LOGGER_LOG_EVENT", "true")
@@ -165,7 +169,11 @@ def test_inject_lambda_context_log_event_request_env_var(
 
 
 def test_inject_lambda_context_log_no_request_by_default(
-    monkeypatch, lambda_context, stdout, lambda_event, service_name
+    monkeypatch,
+    lambda_context,
+    stdout,
+    lambda_event,
+    service_name,
 ):
     # GIVEN Logger is initialized
     logger = Logger(service=service_name, stream=stdout)
@@ -379,6 +387,23 @@ def test_logger_level_env_var_as_int(monkeypatch, service_name):
         Logger(service=service_name)
 
 
+def test_logger_switch_between_levels(stdout, service_name):
+    # GIVEN a Loggers is initialized with INFO level
+    logger = Logger(service=service_name, level="INFO", stream=stdout)
+    logger.info("message info")
+
+    # WHEN we switch to DEBUG level
+    logger.setLevel(level="DEBUG")
+    logger.debug("message debug")
+
+    # THEN we must have different levels and messages in stdout
+    log_output = capture_multiple_logging_statements_output(stdout)
+    assert log_output[0]["level"] == "INFO"
+    assert log_output[0]["message"] == "message info"
+    assert log_output[1]["level"] == "DEBUG"
+    assert log_output[1]["message"] == "message debug"
+
+
 def test_logger_record_caller_location(stdout, service_name):
     # GIVEN Logger is initialized
     logger = Logger(service=service_name, stream=stdout)
@@ -573,7 +598,7 @@ def test_logger_custom_formatter(stdout, service_name, lambda_context):
                     "timestamp": self.formatTime(record),
                     "my_default_key": "test",
                     **self.custom_format,
-                }
+                },
             )
 
     custom_formatter = CustomFormatter()
@@ -825,7 +850,8 @@ def test_use_datetime(stdout, service_name, utc):
 
     expected_tz = datetime.now().astimezone(timezone.utc if utc else None).strftime("%z")
     assert re.fullmatch(
-        f"custom timestamp: milliseconds=[0-9]+ microseconds=[0-9]+ timezone={re.escape(expected_tz)}", log["timestamp"]
+        f"custom timestamp: milliseconds=[0-9]+ microseconds=[0-9]+ timezone={re.escape(expected_tz)}",
+        log["timestamp"],
     )
 
 
@@ -885,7 +911,7 @@ def test_set_package_logger_handler_with_powertools_debug_env_var(stdout, monkey
     logger = logging.getLogger("aws_lambda_powertools")
 
     # WHEN set_package_logger is used at initialization
-    # and any Powertools operation is used (e.g., Tracer)
+    # and any Powertools for AWS Lambda (Python) operation is used (e.g., Tracer)
     set_package_logger_handler(stream=stdout)
     Tracer(disabled=True)
 

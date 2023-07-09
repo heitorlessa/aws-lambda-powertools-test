@@ -10,7 +10,7 @@ from boto3.dynamodb.types import TypeDeserializer
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
-from aws_lambda_powertools.shared import constants
+from aws_lambda_powertools.shared import constants, user_agent
 from aws_lambda_powertools.utilities.idempotency import BasePersistenceLayer
 from aws_lambda_powertools.utilities.idempotency.exceptions import (
     IdempotencyItemAlreadyExistsError,
@@ -94,6 +94,8 @@ class DynamoDBPersistenceLayer(BasePersistenceLayer):
         else:
             self.client = boto3_client
 
+        user_agent.register_feature_to_client(client=self.client, feature="idempotency")
+
         if sort_key_attr == key_attr:
             raise ValueError(f"key_attr [{key_attr}] and sort_key_attr [{sort_key_attr}] cannot be the same!")
 
@@ -161,7 +163,9 @@ class DynamoDBPersistenceLayer(BasePersistenceLayer):
 
     def _get_record(self, idempotency_key) -> DataRecord:
         response = self.client.get_item(
-            TableName=self.table_name, Key=self._get_key(idempotency_key), ConsistentRead=True
+            TableName=self.table_name,
+            Key=self._get_key(idempotency_key),
+            ConsistentRead=True,
         )
         try:
             item = response["Item"]
@@ -209,7 +213,7 @@ class DynamoDBPersistenceLayer(BasePersistenceLayer):
                     "#status = :inprogress",
                     "attribute_exists(#in_progress_expiry)",
                     "#in_progress_expiry < :now_in_millis",
-                ]
+                ],
             )
 
             condition_expression = (
@@ -235,7 +239,7 @@ class DynamoDBPersistenceLayer(BasePersistenceLayer):
             error_code = exc.response.get("Error", {}).get("Code")
             if error_code == "ConditionalCheckFailedException":
                 logger.debug(
-                    f"Failed to put record for already existing idempotency key: {data_record.idempotency_key}"
+                    f"Failed to put record for already existing idempotency key: {data_record.idempotency_key}",
                 )
                 raise IdempotencyItemAlreadyExistsError from exc
             else:
@@ -243,7 +247,7 @@ class DynamoDBPersistenceLayer(BasePersistenceLayer):
 
     def _update_record(self, data_record: DataRecord):
         logger.debug(f"Updating record for idempotency key: {data_record.idempotency_key}")
-        update_expression = "SET #response_data = :response_data, #expiry = :expiry, " "#status = :status"
+        update_expression = "SET #response_data = :response_data, #expiry = :expiry, #status = :status"
         expression_attr_values: Dict[str, "AttributeValueTypeDef"] = {
             ":expiry": {"N": str(data_record.expiry_timestamp)},
             ":response_data": {"S": data_record.response_data},

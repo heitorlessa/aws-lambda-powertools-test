@@ -31,7 +31,7 @@ class CustomFormatter(BasePowertoolsFormatter):
                 "timestamp": self.formatTime(record),
                 "my_default_key": "test",
                 **self.log_format,
-            }
+            },
         )
 
 
@@ -39,5 +39,5 @@ logger = Logger(service="payment", logger_formatter=CustomFormatter())
 
 
 @logger.inject_lambda_context
-def handler(event, context):
+def lambda_handler(event, context):
     logger.info("Collecting payment")

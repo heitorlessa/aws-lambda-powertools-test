@@ -1,0 +1,21 @@
+title = "gitleaks config"
+
+[allowlist]
+description = "global allow lists"
+paths = [
+    '''gitleaks.toml''',
+    '''(go.mod|go.sum)$''',
+    '''node_modules''',
+    '''package-lock.json''',
+    '''examples/batch_processing/src/getting_started_sqs_event.json''',
+    '''examples/batch_processing/src/pydantic_sqs_event.json''',
+    '''examples/batch_processing/src/pydantic_sqs_event.json''',
+    '''examples/batch_processing/src/getting_started_sqs_event.json''',
+    '''examples/event_sources/src/aws_config_rule_item_changed.json''',
+    '''tests/events/s3SqsEvent.json''',
+    '''tests/events/awsConfigRuleConfigurationChanged.json''',
+    '''tests/unit/parser/test_sqs.py''',
+    '''tests/unit/parser/test_kinesis_firehose.py''',
+    '''tests/unit/parser/test_kinesis_firehose.py''',
+    '''tests/unit/parser/test_kinesis_firehose.py''',
+]

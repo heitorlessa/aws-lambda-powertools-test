@@ -208,7 +208,7 @@ def test_dict_wrapper_str_property_list_exception():
 
     event_source = DataClassSample({})
     event_str = (
-        "{'data_property': ['string', 0, 0.0, {'broken_data_property': "
+        "{'data_property': ['string', 0, 0.0, {'broken_data_property': "  # noqa: ISC003
         + "'[Cannot be deserialized]', 'raw_event': '[SENSITIVE]'}], 'raw_event': '[SENSITIVE]'}"
     )
     assert str(event_source) == event_str
@@ -243,7 +243,7 @@ def test_dict_wrapper_str_recursive_property():
     event_source = DataClassRecursive({})
     assert (
         str(event_source)
-        == "{'data_property': {'raw_event': '[SENSITIVE]', 'terminal_property': 'end-recursion'},"
+        == "{'data_property': {'raw_event': '[SENSITIVE]', 'terminal_property': 'end-recursion'},"  # noqa: ISC003
         + " 'raw_event': '[SENSITIVE]'}"
     )
 
@@ -621,14 +621,14 @@ def test_connect_contact_flow_event_all():
     assert event.contact_data.media_streams.customer.audio.start_timestamp == "1565781909613"
     assert (
         event.contact_data.media_streams.customer.audio.stream_arn
-        == "arn:aws:kinesisvideo:eu-central-1:123456789012:stream/"
+        == "arn:aws:kinesisvideo:eu-central-1:123456789012:stream/"  # noqa: ISC003
         + "connect-contact-a3d73b84-ce0e-479a-a9dc-5637c9d30ac9/1565272947806"
     )
     assert event.contact_data.previous_contact_id == "5ca32fbd-8f92-46af-92a5-6b0f970f0efe"
     assert event.contact_data.queue is not None
     assert (
         event.contact_data.queue.arn
-        == "arn:aws:connect:eu-central-1:123456789012:instance/9308c2a1-9bc6-4cea-8290-6c0b4a6d38fa/"
+        == "arn:aws:connect:eu-central-1:123456789012:instance/9308c2a1-9bc6-4cea-8290-6c0b4a6d38fa/"  # noqa: ISC003
         + "queue/5cba7cbf-1ecb-4b6d-b8bd-fe91079b3fc8"
     )
     assert event.contact_data.queue.name == "QueueOne"
@@ -797,10 +797,10 @@ def test_s3_glacier_event():
                     "restoreEventData": {
                         "lifecycleRestorationExpiryTime": "1970-01-01T00:01:00.000Z",
                         "lifecycleRestoreStorageClass": "standard",
-                    }
-                }
-            }
-        ]
+                    },
+                },
+            },
+        ],
     }
     event = S3Event(example_event)
     record = next(event.records)
@@ -1742,7 +1742,7 @@ def test_code_pipeline_event_non_json_user_parameters():
     assert configuration.user_parameters is not None
 
     with pytest.raises(json.decoder.JSONDecodeError):
-        configuration.decoded_user_parameters
+        configuration.decoded_user_parameters  # noqa: B018
 
 
 def test_code_pipeline_event_decoded_data():
@@ -1803,7 +1803,7 @@ def test_code_pipeline_get_artifact(mocker: MockerFixture):
             "aws_access_key_id": event.data.artifact_credentials.access_key_id,
             "aws_secret_access_key": event.data.artifact_credentials.secret_access_key,
             "aws_session_token": event.data.artifact_credentials.session_token,
-        }
+        },
     )
     assert artifact_str == file_contents
 

@@ -33,6 +33,7 @@ from aws_lambda_powertools.utilities.data_classes import (
     APIGatewayProxyEvent,
     APIGatewayProxyEventV2,
     LambdaFunctionUrlEvent,
+    VPCLatticeEvent,
 )
 from aws_lambda_powertools.utilities.data_classes.common import BaseProxyEvent
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -53,6 +54,7 @@ class ProxyEventType(Enum):
     APIGatewayProxyEvent = "APIGatewayProxyEvent"
     APIGatewayProxyEventV2 = "APIGatewayProxyEventV2"
     ALBEvent = "ALBEvent"
+    VPCLatticeEvent = "VPCLatticeEvent"
     LambdaFunctionUrlEvent = "LambdaFunctionUrlEvent"
 
 
@@ -84,6 +86,7 @@ class CORSConfig:
 
     cors_config = CORSConfig(
         allow_origin="https://wwww.example.com/",
+        extra_origins=["https://dev.example.com/"],
         expose_headers=["x-exposed-response-header"],
         allow_headers=["x-custom-request-header"],
         max_age=100,
@@ -106,6 +109,7 @@ class CORSConfig:
     def __init__(
         self,
         allow_origin: str = "*",
+        extra_origins: Optional[List[str]] = None,
         allow_headers: Optional[List[str]] = None,
         expose_headers: Optional[List[str]] = None,
         max_age: Optional[int] = None,
@@ -117,6 +121,8 @@ class CORSConfig:
         allow_origin: str
             The value of the `Access-Control-Allow-Origin` to send in the response. Defaults to "*", but should
             only be used during development.
+        extra_origins: Optional[List[str]]
+            The list of additional allowed origins.
         allow_headers: Optional[List[str]]
             The list of additional allowed headers. This list is added to list of
             built-in allowed headers: `Authorization`, `Content-Type`, `X-Amz-Date`,
@@ -128,16 +134,29 @@ class CORSConfig:
         allow_credentials: bool
             A boolean value that sets the value of `Access-Control-Allow-Credentials`
         """
-        self.allow_origin = allow_origin
+        self._allowed_origins = [allow_origin]
+        if extra_origins:
+            self._allowed_origins.extend(extra_origins)
         self.allow_headers = set(self._REQUIRED_HEADERS + (allow_headers or []))
         self.expose_headers = expose_headers or []
         self.max_age = max_age
         self.allow_credentials = allow_credentials
 
-    def to_dict(self) -> Dict[str, str]:
+    def to_dict(self, origin: Optional[str]) -> Dict[str, str]:
         """Builds the configured Access-Control http headers"""
+
+        # If there's no Origin, don't add any CORS headers
+        if not origin:
+            return {}
+
+        # If the origin doesn't match any of the allowed origins, and we don't allow all origins ("*"),
+        # don't add any CORS headers
+        if origin not in self._allowed_origins and "*" not in self._allowed_origins:
+            return {}
+
+        # The origin matched an allowed origin, so return the CORS headers
         headers: Dict[str, str] = {
-            "Access-Control-Allow-Origin": self.allow_origin,
+            "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Headers": ",".join(sorted(self.allow_headers)),
         }
 
@@ -160,6 +179,7 @@ class Response:
         body: Union[str, bytes, None] = None,
         headers: Optional[Dict[str, Union[str, List[str]]]] = None,
         cookies: Optional[List[Cookie]] = None,
+        compress: Optional[bool] = None,
     ):
         """
 
@@ -182,6 +202,7 @@ class Response:
         self.base64_encoded = False
         self.headers: Dict[str, Union[str, List[str]]] = headers if headers else {}
         self.cookies = cookies or []
+        self.compress = compress
         if content_type:
             self.headers.setdefault("Content-Type", content_type)
 
@@ -190,7 +211,13 @@ class Route:
     """Internally used Route Configuration"""
 
     def __init__(
-        self, method: str, rule: Pattern, func: Callable, cors: bool, compress: bool, cache_control: Optional[str]
+        self,
+        method: str,
+        rule: Pattern,
+        func: Callable,
+        cors: bool,
+        compress: bool,
+        cache_control: Optional[str],
     ):
         self.method = method.upper()
         self.rule = rule
@@ -207,14 +234,48 @@ class ResponseBuilder:
         self.response = response
         self.route = route
 
-    def _add_cors(self, cors: CORSConfig):
+    def _add_cors(self, event: BaseProxyEvent, cors: CORSConfig):
         """Update headers to include the configured Access-Control headers"""
-        self.response.headers.update(cors.to_dict())
+        self.response.headers.update(cors.to_dict(event.get_header_value("Origin")))
 
     def _add_cache_control(self, cache_control: str):
         """Set the specified cache control headers for 200 http responses. For non-200 `no-cache` is used."""
         cache_control = cache_control if self.response.status_code == 200 else "no-cache"
         self.response.headers["Cache-Control"] = cache_control
+
+    @staticmethod
+    def _has_compression_enabled(
+        route_compression: bool,
+        response_compression: Optional[bool],
+        event: BaseProxyEvent,
+    ) -> bool:
+        """
+        Checks if compression is enabled.
+
+        NOTE: Response compression takes precedence.
+
+        Parameters
+        ----------
+        route_compression: bool, optional
+            A boolean indicating whether compression is enabled or not in the route setting.
+        response_compression: bool, optional
+            A boolean indicating whether compression is enabled or not in the response setting.
+        event: BaseProxyEvent
+            The event object containing the request details.
+
+        Returns
+        -------
+        bool
+            True if compression is enabled and the "gzip" encoding is accepted, False otherwise.
+        """
+        encoding: str = event.get_header_value(name="accept-encoding", default_value="", case_sensitive=False)  # type: ignore[assignment] # noqa: E501
+        if "gzip" in encoding:
+            if response_compression is not None:
+                return response_compression  # e.g., Response(compress=False/True))
+            if route_compression:
+                return True  # e.g., @app.get(compress=True)
+
+        return False
 
     def _compress(self):
         """Compress the response body, but only if `Accept-Encoding` headers includes gzip."""
@@ -230,10 +291,14 @@ class ResponseBuilder:
         if self.route is None:
             return
         if self.route.cors:
-            self._add_cors(cors or CORSConfig())
+            self._add_cors(event, cors or CORSConfig())
         if self.route.cache_control:
             self._add_cache_control(self.route.cache_control)
-        if self.route.compress and "gzip" in (event.get_header_value("accept-encoding", "") or ""):
+        if self._has_compression_enabled(
+            route_compression=self.route.compress,
+            response_compression=self.response.compress,
+            event=event,
+        ):
             self._compress()
 
     def build(self, event: BaseProxyEvent, cors: Optional[CORSConfig] = None) -> Dict[str, Any]:
@@ -347,7 +412,11 @@ class BaseRouter(ABC):
         return self.route(rule, "PUT", cors, compress, cache_control)
 
     def delete(
-        self, rule: str, cors: Optional[bool] = None, compress: bool = False, cache_control: Optional[str] = None
+        self,
+        rule: str,
+        cors: Optional[bool] = None,
+        compress: bool = False,
+        cache_control: Optional[str] = None,
     ):
         """Delete route decorator with DELETE `method`
 
@@ -374,7 +443,11 @@ class BaseRouter(ABC):
         return self.route(rule, "DELETE", cors, compress, cache_control)
 
     def patch(
-        self, rule: str, cors: Optional[bool] = None, compress: bool = False, cache_control: Optional[str] = None
+        self,
+        rule: str,
+        cors: Optional[bool] = None,
+        compress: bool = False,
+        cache_control: Optional[str] = None,
     ):
         """Patch route decorator with PATCH `method`
 
@@ -466,7 +539,8 @@ class ApiGatewayResolver(BaseRouter):
             with api gateways with multiple custom mappings.
         """
         self._proxy_type = proxy_type
-        self._routes: List[Route] = []
+        self._dynamic_routes: List[Route] = []
+        self._static_routes: List[Route] = []
         self._route_keys: List[str] = []
         self._exception_handlers: Dict[Type, Callable] = {}
         self._cors = cors
@@ -498,11 +572,22 @@ class ApiGatewayResolver(BaseRouter):
                 cors_enabled = cors
 
             for item in methods:
-                self._routes.append(Route(item, self._compile_regex(rule), func, cors_enabled, compress, cache_control))
+                _route = Route(item, self._compile_regex(rule), func, cors_enabled, compress, cache_control)
+
+                # The more specific route wins.
+                # We store dynamic (/studies/{studyid}) and static routes (/studies/fetch) separately.
+                # Then attempt a match for static routes before dynamic routes.
+                # This ensures that the most specific route is prioritized and processed first (studies/fetch).
+                if _route.rule.groups > 0:
+                    self._dynamic_routes.append(_route)
+                else:
+                    self._static_routes.append(_route)
+
                 route_key = item + rule
                 if route_key in self._route_keys:
                     warnings.warn(
-                        f"A route like this was already registered. method: '{item}' rule: '{rule}'", stacklevel=2
+                        f"A route like this was already registered. method: '{item}' rule: '{rule}'",
+                        stacklevel=2,
                     )
                 self._route_keys.append(route_key)
                 if cors_enabled:
@@ -600,6 +685,9 @@ class ApiGatewayResolver(BaseRouter):
         if self._proxy_type == ProxyEventType.LambdaFunctionUrlEvent:
             logger.debug("Converting event to Lambda Function URL contract")
             return LambdaFunctionUrlEvent(event)
+        if self._proxy_type == ProxyEventType.VPCLatticeEvent:
+            logger.debug("Converting event to VPC Lattice contract")
+            return VPCLatticeEvent(event)
         logger.debug("Converting event to ALB contract")
         return ALBEvent(event)
 
@@ -607,7 +695,8 @@ class ApiGatewayResolver(BaseRouter):
         """Resolves the response or return the not found response"""
         method = self.current_event.http_method.upper()
         path = self._remove_prefix(self.current_event.path)
-        for route in self._routes:
+
+        for route in self._static_routes + self._dynamic_routes:
             if method != route.method:
                 continue
             match_results: Optional[Match] = route.rule.match(path)
@@ -644,7 +733,7 @@ class ApiGatewayResolver(BaseRouter):
         headers: Dict[str, Union[str, List[str]]] = {}
         if self._cors:
             logger.debug("CORS is enabled, updating headers.")
-            headers.update(self._cors.to_dict())
+            headers.update(self._cors.to_dict(self.current_event.get_header_value("Origin")))
 
             if method == "OPTIONS":
                 logger.debug("Pre-flight request detected. Returning CORS with null response")
@@ -661,7 +750,7 @@ class ApiGatewayResolver(BaseRouter):
                 content_type=content_types.APPLICATION_JSON,
                 headers=headers,
                 body=self._json_dump({"statusCode": HTTPStatus.NOT_FOUND.value, "message": "Not found"}),
-            )
+            ),
         )
 
     def _call_route(self, route: Route, args: Dict[str, str]) -> ResponseBuilder:
@@ -779,12 +868,14 @@ class ApiGatewayResolver(BaseRouter):
         router.context = self.context
 
         for route, func in router._routes.items():
+            new_route = route
+
             if prefix:
                 rule = route[0]
                 rule = prefix if rule == "/" else f"{prefix}{rule}"
-                route = (rule, *route[1:])
+                new_route = (rule, *route[1:])
 
-            self.route(*route)(func)
+            self.route(*new_route)(func)
 
 
 class Router(BaseRouter):

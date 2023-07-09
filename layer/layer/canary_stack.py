@@ -53,7 +53,7 @@ class CanaryStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         deploy_stage = CfnParameter(
-            self, "DeployStage", description="Deployment stage for canary"
+            self, "DeployStage", description="Deployment stage for canary"  # noqa: COM812
         ).value_as_string
 
         has_arm64_support = CfnParameter(
@@ -71,7 +71,7 @@ class CanaryStack(Stack):
         )
 
         layer_arn = StringParameter.from_string_parameter_attributes(
-            self, "LayerVersionArnParam", parameter_name=ssm_paramter_layer_arn
+            self, "LayerVersionArnParam", parameter_name=ssm_paramter_layer_arn  # noqa: COM812
         ).string_value
         Canary(
             self,
@@ -112,7 +112,7 @@ class Canary(Construct):
         super().__init__(scope, construct_id)
 
         layer = LayerVersion.from_layer_version_arn(
-            self, "PowertoolsLayer", layer_version_arn=layer_arn
+            self, "PowertoolsLayer", layer_version_arn=layer_arn  # noqa: COM812
         )
 
         execution_role = Role(
@@ -123,14 +123,14 @@ class Canary(Construct):
 
         execution_role.add_managed_policy(
             ManagedPolicy.from_aws_managed_policy_name(
-                "service-role/AWSLambdaBasicExecutionRole"
-            )
+                "service-role/AWSLambdaBasicExecutionRole"  # noqa: COM812
+            )  # noqa: COM812
         )
 
         execution_role.add_to_policy(
             PolicyStatement(
-                effect=Effect.ALLOW, actions=["lambda:GetFunction"], resources=["*"]
-            )
+                effect=Effect.ALLOW, actions=["lambda:GetFunction"], resources=["*"]  # noqa: COM812
+            )  # noqa: COM812
         )
 
         canary_lambda = Function(
@@ -158,7 +158,7 @@ class Canary(Construct):
                 effect=Effect.ALLOW,
                 actions=["events:PutEvents"],
                 resources=[VERSION_TRACKING_EVENT_BUS_ARN],
-            )
+            )  # noqa: COM812
         )
 
         # custom resource provider configuration
