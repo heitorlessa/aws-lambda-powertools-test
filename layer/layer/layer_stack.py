@@ -170,6 +170,6 @@ class LayerStack(Stack):
             ).to_string(),
         )
 
-        Aspects.of(
-            CfnOutput(self, "LatestLayerArm64Arn", value=layer_arm64.layer_version_arn)  # noqa: COM812
-        ).add(ApplyCondition(has_arm64_condition))
+        Aspects.of(CfnOutput(self, "LatestLayerArm64Arn", value=layer_arm64.layer_version_arn)).add(  # noqa: COM812
+            ApplyCondition(has_arm64_condition),
+        )

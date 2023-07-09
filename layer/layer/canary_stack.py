@@ -25,9 +25,7 @@ from aws_cdk.aws_ssm import StringParameter
 from aws_cdk.custom_resources import Provider
 from constructs import Construct
 
-VERSION_TRACKING_EVENT_BUS_ARN: str = (
-    "arn:aws:events:eu-central-1:027876851704:event-bus/VersionTrackingEventBus"
-)
+VERSION_TRACKING_EVENT_BUS_ARN: str = "arn:aws:events:eu-central-1:027876851704:event-bus/VersionTrackingEventBus"
 
 
 @jsii.implements(IAspect)
