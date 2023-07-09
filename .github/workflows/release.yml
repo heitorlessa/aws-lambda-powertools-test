@@ -165,6 +165,7 @@ jobs:
       contents: read
     outputs:
       BUILD_INTEGRITY_HASH: ${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH }}
+      ATTESTATION_HASHES: ${{ steps.encoded_hash.outputs.ATTESTATION_HASHES }}
     env:
       SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
@@ -207,18 +208,35 @@ jobs:
           # dist/  - package distribution build
           HASH: ${{ hashFiles('dist/**')}}
 
+      - name: Create attestation encoded hash for provenance
+        id: encoded_hash
+        working-directory: dist
+        run: echo "ATTESTATION_HASHES=$(sha256sum ./* | base64 -w0)" >> "$GITHUB_OUTPUT"
+
       - name: Upload build artifact
         uses: ./.github/actions/upload-artifact
         with:
           name: build-${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH}}
           path: dist/
 
+  provenance:
+    needs: [seal, build]
+    permissions:
+      actions: read # To read the workflow path.
+      id-token: write # To sign the provenance.
+    # provenance fails if we use hash... it's a feature not a bug it seems
+    # https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/generic/README.md#referencing-the-slsa-generator
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v1.7.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.ATTESTATION_HASHES }}
+      upload-assets: false
+
   # This job uses release artifact to publish to PyPi
   # it exchanges JWT tokens with GitHub to obtain PyPi credentials
   # since it's already registered as a Trusted Publisher.
   # It uses the sealed build artifact (.whl, .tar.gz) to release it
   release:
-    needs: [build, seal]
+    needs: [build, seal, provenance]
     environment: release
     runs-on: ubuntu-latest
     permissions:
@@ -243,16 +261,15 @@ jobs:
         env:
           CURRENT_HASH: ${{ hashFiles('dist/**')}}
 
-      - name: Upload to PyPi prod
-        if: ${{ !inputs.skip_pypi }}
-        uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0 # v1.8.7
-
-      # March 1st: PyPi test is under maintenance....
-      # - name: Upload to PyPi test
+      # - name: Upload to PyPi prod
       #   if: ${{ !inputs.skip_pypi }}
       #   uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0 # v1.8.7
-      #   with:
-      #     repository-url: https://test.pypi.org/legacy/
+
+      - name: Upload to PyPi test
+        if: ${{ !inputs.skip_pypi }}
+        uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0 # v1.8.7
+        with:
+          repository-url: https://test.pypi.org/legacy/
 
   # We create a Git Tag using our release version (e.g., v2.16.0)
   # using our sealed source code we created earlier.
@@ -261,7 +278,7 @@ jobs:
   # otherwise the release commit will be used as the basis for the tag.
   # Later, we create a PR to update trunk with our newest release version (e.g., bump_version job)
   create_tag:
-    needs: [release, seal]
+    needs: [release, seal, provenance]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -293,6 +310,15 @@ jobs:
           git config user.name "Powertools for AWS Lambda (Python) bot"
           git config user.email "aws-lambda-powertools-feedback@amazon.com"
           git config remote.origin.url >&-
+
+      - name: Download the provenance
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+        with:
+          name: ${{needs.provenance.outputs.provenance-name}}
+
+      # [DEBUG] Confirm provenance files are in the filesystem
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Create Git Tag
         run: |
@@ -351,37 +377,37 @@ jobs:
   #
   # Watch out for the depth limit of 4 nested workflow_calls.
   # publish_layer -> publish_v2_layer -> reusable_deploy_v2_layer_stack
-  publish_layer:
-    needs: [seal, release, create_tag]
-    secrets: inherit
-    permissions:
-      id-token: write
-      contents: write
-      pages: write
-      pull-requests: write
-    uses: ./.github/workflows/publish_v2_layer.yml
-    with:
-      latest_published_version: ${{ needs.seal.outputs.RELEASE_VERSION }}
-      pre_release: ${{ inputs.pre_release }}
+  # publish_layer:
+  #   needs: [seal, release, create_tag]
+  #   secrets: inherit
+  #   permissions:
+  #     id-token: write
+  #     contents: write
+  #     pages: write
+  #     pull-requests: write
+  #   uses: ./.github/workflows/publish_v2_layer.yml
+  #   with:
+  #     latest_published_version: ${{ needs.seal.outputs.RELEASE_VERSION }}
+  #     pre_release: ${{ inputs.pre_release }}
 
-  post_release:
-    needs: [seal, release, publish_layer]
-    permissions:
-      contents: read
-      issues: write
-      discussions: write
-      pull-requests: write
-    runs-on: ubuntu-latest
-    env:
-      RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
-    steps:
-      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
-        with:
-          ref: ${{ env.RELEASE_COMMIT }}
-      - name: Close issues related to this release
-        uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const post_release = require('.github/scripts/post_release.js')
-            await post_release({github, context, core})
+  # post_release:
+  #   needs: [seal, release, publish_layer]
+  #   permissions:
+  #     contents: read
+  #     issues: write
+  #     discussions: write
+  #     pull-requests: write
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
+  #   steps:
+  #     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
+  #       with:
+  #         ref: ${{ env.RELEASE_COMMIT }}
+  #     - name: Close issues related to this release
+  #       uses: actions/github-script@d7906e4ad0b1822421a7e6a35d5ca353c962f410 # v6.4.1
+  #       with:
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         script: |
+  #           const post_release = require('.github/scripts/post_release.js')
+  #           await post_release({github, context, core})
