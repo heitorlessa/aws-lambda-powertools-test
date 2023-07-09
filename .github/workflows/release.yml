@@ -222,6 +222,7 @@ jobs:
   provenance:
     needs: [seal, build]
     permissions:
+      contents: read # checkout code
       actions: read # To read the workflow path.
       id-token: write # To sign the provenance.
     # provenance fails if we use hash... it's a feature not a bug it seems
