@@ -266,20 +266,6 @@ jobs:
       #   if: ${{ !inputs.skip_pypi }}
       #   uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0 # v1.8.7
 
-      - name: Download the provenance
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
-        with:
-          name: ${{needs.provenance.outputs.provenance-name}}
-
-      - name: Provenance list
-        run: ls -l
-        env:
-          PROVENANCE_NAME: ${{needs.provenance.outputs.provenance-name}}
-
-      # [DEBUG] Confirm provenance files are in the filesystem
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@53a5c23a925969671a6bb98ea70a4f650928ef93 # v3.16
-
       - name: Upload to PyPi test
         if: ${{ !inputs.skip_pypi }}
         uses: pypa/gh-action-pypi-publish@f5622bde02b04381239da3573277701ceca8f6a0 # v1.8.7
@@ -339,6 +325,12 @@ jobs:
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
         with:
           name: ${{needs.provenance.outputs.provenance-name}}
+
+      - name: Upload provenance to release tag
+        run: gh release upload v"${RELEASE_VERSION}" "${PROVENANCE_FILE}"
+        env:
+          RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
+          PROVENANCE_FILE: ${{needs.provenance.outputs.provenance-name}}
 
   # Creates a PR with the latest version we've just released
   # since our trunk is protected against any direct pushes from automation
