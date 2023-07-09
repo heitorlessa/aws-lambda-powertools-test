@@ -331,6 +331,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
           PROVENANCE_FILE: ${{needs.provenance.outputs.provenance-name}}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Creates a PR with the latest version we've just released
   # since our trunk is protected against any direct pushes from automation
