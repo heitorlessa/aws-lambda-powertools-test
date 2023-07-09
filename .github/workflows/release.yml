@@ -326,10 +326,16 @@ jobs:
         with:
           name: ${{needs.provenance.outputs.provenance-name}}
 
-      - name: Upload provenance to release tag
+      - name: Update draft release tag to release commit tag
         run: |
-          gh release list
-          gh release upload v"${RELEASE_VERSION}" "${PROVENANCE_FILE}"
+          CURRENT_DRAFT_RELEASE=$(gh release list | awk '{ if ($2 == "Draft") print $1}')
+          gh release edit "${CURRENT_DRAFT_RELEASE}" --tag v"${RELEASE_VERSION}"
+        env:
+          RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload provenance to release tag
+        run: gh release upload v"${RELEASE_VERSION}" "${PROVENANCE_FILE}"
         env:
           RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
           PROVENANCE_FILE: ${{needs.provenance.outputs.provenance-name}}
