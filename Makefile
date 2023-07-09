@@ -6,8 +6,8 @@ target:
 
 dev:
 	pip install --upgrade pip pre-commit poetry
-	@$(MAKE) dev-version-plugin
 	poetry install --extras "all"
+	@$(MAKE) dev-version-plugin
 	pre-commit install
 
 dev-gitpod:
@@ -110,4 +110,4 @@ mypy:
 
 
 dev-version-plugin:
-	poetry self add git+https://github.com/monim67/poetry-bumpversion@315fe3324a699fa12ec20e202eb7375d4327d1c4
+	poetry self add git+https://github.com/monim67/poetry-bumpversion@c90cdf2141d50b1cd0dc4de6de956a1f1b03e8fe
