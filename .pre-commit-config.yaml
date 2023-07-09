@@ -39,7 +39,11 @@ repos:
     rev: "fd7ba3c382e13dcc0248e425b4cbc3f1185fa3ee" # v1.6.24
     hooks:
       - id: actionlint-docker
-        args: [-pyflakes=]
+        args:
+          [
+            "-pyflakes=",
+            "-ignore 'slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml'",
+          ]
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: 3420134c37197c21edffc7e6093b14ffae8402f2 # v1.81.0
     hooks:
