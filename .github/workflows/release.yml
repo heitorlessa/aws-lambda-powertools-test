@@ -327,7 +327,9 @@ jobs:
           name: ${{needs.provenance.outputs.provenance-name}}
 
       - name: Upload provenance to release tag
-        run: gh release upload v"${RELEASE_VERSION}" "${PROVENANCE_FILE}"
+        run: |
+          gh release list
+          gh release upload v"${RELEASE_VERSION}" "${PROVENANCE_FILE}"
         env:
           RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
           PROVENANCE_FILE: ${{needs.provenance.outputs.provenance-name}}
