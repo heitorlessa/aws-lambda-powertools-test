@@ -66,8 +66,8 @@ jobs:
       contents: read
     outputs:
         # SOURCE_CODE_HASH: ${{ steps.integrity.outputs.SOURCE_CODE_HASH }}
-        SOURCE_CODE_HASH: ${{ steps.seal_source_code.outputs.integrity_hash }}
-        SOURCE_CODE_ARTIFACT_NAME: ${{ steps.seal_source_code.outputs.artifact_name }}
+        integrity_hash: ${{ steps.seal_source_code.outputs.integrity_hash }}
+        artifact_name: ${{ steps.seal_source_code.outputs.artifact_name }}
         RELEASE_VERSION: ${{ steps.release_version.outputs.RELEASE_VERSION }}
     steps:
       - name: Export release version
@@ -132,9 +132,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
-      SOURCE_CODE_ARTIFACT_NAME: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+    # env:
+    #   SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+    #   SOURCE_CODE_ARTIFACT_NAME: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
     steps:
       # NOTE: we need actions/checkout to configure git first (pre-commit hooks in make dev)
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
@@ -144,8 +144,8 @@ jobs:
       - name: Restore sealed source code
         uses: ./.github/actions/seal-restore
         with:
-          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
-          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+          integrity_hash: ${{ needs.seal.outputs.integrity_hash }}
+          artifact_name: ${{ needs.seal.outputs.artifact_name }}
 
       # - name: Restore sealed source code
       #   uses: ./.github/actions/download-artifact
@@ -180,11 +180,11 @@ jobs:
       contents: read
     outputs:
       # BUILD_INTEGRITY_HASH: ${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH }}
-      BUILD_INTEGRITY_HASH: ${{ steps.seal_build.outputs.integrity_hash }}
-      BUILD_ARTIFACT_NAME: ${{ steps.seal_build.outputs.artifact_name }}
+      integrity_hash: ${{ steps.seal_build.outputs.integrity_hash }}
+      artifact_name: ${{ steps.seal_build.outputs.artifact_name }}
       ATTESTATION_HASHES: ${{ steps.encoded_hash.outputs.ATTESTATION_HASHES }}
-    env:
-      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+    # env:
+    #   SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
       # NOTE: we need actions/checkout to configure git first (pre-commit hooks in make dev)
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
@@ -194,8 +194,8 @@ jobs:
       - name: Restore sealed source code
         uses: ./.github/actions/seal-restore
         with:
-          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
-          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+          integrity_hash: ${{ needs.seal.outputs.integrity_hash }}
+          artifact_name: ${{ needs.seal.outputs.artifact_name }}
 
       # - name: Restore sealed source code
       #   uses: ./.github/actions/download-artifact
@@ -274,7 +274,6 @@ jobs:
       id-token: write # OIDC for PyPi Trusted Publisher feature
     env:
       RELEASE_VERSION: ${{ needs.seal.outputs.RELEASE_VERSION }}
-      BUILD_INTEGRITY_HASH: ${{ needs.build.outputs.BUILD_INTEGRITY_HASH }}
     steps:
       # NOTE: we need actions/checkout in order to use our local actions (e.g., ./.github/actions)
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
@@ -284,8 +283,8 @@ jobs:
       - name: Restore sealed source code
         uses: ./.github/actions/seal-restore
         with:
-          integrity_hash: ${{ needs.build.outputs.BUILD_INTEGRITY_HASH }}
-          artifact_name: ${{ needs.build.outputs.BUILD_ARTIFACT_NAME }}
+          integrity_hash: ${{ needs.build.outputs.integrity_hash }}
+          artifact_name: ${{ needs.build.outputs.artifact_name }}
 
       # - name: Restore sealed build
       #   uses: ./.github/actions/download-artifact
@@ -319,8 +318,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    env:
-      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+    # env:
+    #   SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
       # NOTE: we need actions/checkout to authenticate and configure git first
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
@@ -330,8 +329,8 @@ jobs:
       - name: Restore sealed source code
         uses: ./.github/actions/seal-restore
         with:
-          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
-          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+          integrity_hash: ${{ needs.seal.outputs.integrity_hash }}
+          artifact_name: ${{ needs.seal.outputs.artifact_name }}
 
       # - name: Restore sealed source code
       #   uses: ./.github/actions/download-artifact
@@ -379,8 +378,8 @@ jobs:
       contents: write  # create-pr action creates a temporary branch
       pull-requests: write # create-pr action creates a PR using the temporary branch
     runs-on: ubuntu-latest
-    env:
-      SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+    # env:
+    #   SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
     steps:
       # NOTE: we need actions/checkout to authenticate and configure git first
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
@@ -390,8 +389,8 @@ jobs:
       - name: Restore sealed source code
         uses: ./.github/actions/seal-restore
         with:
-          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
-          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+          integrity_hash: ${{ needs.seal.outputs.integrity_hash }}
+          artifact_name: ${{ needs.seal.outputs.artifact_name }}
 
       # - name: Restore sealed source code
       #   uses: ./.github/actions/download-artifact
