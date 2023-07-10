@@ -60,7 +60,7 @@ runs:
 
     - id: verify_hash
       name: Verify sealed artifact integrity hash
-      run: test "${CURRENT_HASH}" != "${PROVIDED_HASH}" && echo "Provided integrity hash doesn't match" && exit 1
+      run: test "${CURRENT_HASH}" = "${PROVIDED_HASH}" || exit 1
       env:
         ARTEFACT_NAME: ${{ inputs.artifact_name }}
         PROVIDED_HASH: ${{ inputs.integrity_hash }}
