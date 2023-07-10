@@ -28,10 +28,10 @@ inputs:
 outputs:
   integrity_hash:
     description: "Source code integrity hash"
-    value: ${{ steps.seal.outputs.integrity_hash }}
+    value: ${{ steps.integrity_hash.outputs.integrity_hash }}
   artifact_name:
     description: "Artifact name containTemporary branch created with staged changed"
-    value: ${{ steps.seal.outputs.artifact_name }}
+    value: ${{ steps.export_artifact_name.outputs.artifact_name }}
 
 runs:
   using: "composite"
