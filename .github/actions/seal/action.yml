@@ -42,9 +42,10 @@ runs:
 
     - id: export_artifact_name
       name: Export final artifact name
-      run: echo "artifact_name=${ARCHIVE_PREFIX}-${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
+      run: echo "artifact_name=${ARTIFACT_PREFIX}-${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
       env:
         GITHUB_RUN_ID: ${{ github.run_id }}
+        ARTIFACT_PREFIX: ${{ inputs.artifact_name_prefix }}
       shell: bash
 
     # By default, create a tarball of the current directory minus .git
