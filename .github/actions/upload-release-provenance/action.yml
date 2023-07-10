@@ -45,7 +45,6 @@ runs:
       uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
       with:
         name: ${{ inputs.provenance_name }}
-      shell: bash
 
     - id: sync-release-tag
       name: Update draft release tag to release commit tag
