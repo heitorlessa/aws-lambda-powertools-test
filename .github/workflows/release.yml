@@ -65,7 +65,9 @@ jobs:
     permissions:
       contents: read
     outputs:
-        SOURCE_CODE_HASH: ${{ steps.integrity.outputs.SOURCE_CODE_HASH }}
+        # SOURCE_CODE_HASH: ${{ steps.integrity.outputs.SOURCE_CODE_HASH }}
+        SOURCE_CODE_HASH: ${{ steps.seal_source_code.outputs.integrity_hash }}
+        SOURCE_CODE_ARTIFACT_NAME: ${{ steps.seal_source_code.outputs.artifact_name }}
         RELEASE_VERSION: ${{ steps.release_version.outputs.RELEASE_VERSION }}
     steps:
       - name: Export release version
@@ -91,26 +93,32 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.release_version.outputs.RELEASE_VERSION}}
 
-      - name: Create integrity hash
-        id: integrity
-        run: echo "SOURCE_CODE_HASH=${HASH}" >> "$GITHUB_OUTPUT"
-        env:
-          # paths to hash and why they're important to protect
-          #
-          # aws_lambda_powertools/  - source code
-          # pyproject.toml          - project metadata
-          # poetry.lock             - project dependencies
-          # layer/                  - layer infrastructure and pipeline
-          # .github/                - github scripts and actions used in the release
-          # docs/                   - user guide documentation
-          # examples/               - user guide code snippets
-          HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
-
-      - name: Upload sealed source code
-        uses: ./.github/actions/upload-artifact
+      - name: Seal and upload
+        id: seal_source_code
+        uses: ./.github/actions/seal
         with:
-          name: source-${{ steps.integrity.outputs.SOURCE_CODE_HASH }}
-          path: .
+          artifact_name_prefix: "source"
+
+      # - name: Create integrity hash
+      #   id: integrity
+      #   run: echo "SOURCE_CODE_HASH=${HASH}" >> "$GITHUB_OUTPUT"
+      #   env:
+      #     # paths to hash and why they're important to protect
+      #     #
+      #     # aws_lambda_powertools/  - source code
+      #     # pyproject.toml          - project metadata
+      #     # poetry.lock             - project dependencies
+      #     # layer/                  - layer infrastructure and pipeline
+      #     # .github/                - github scripts and actions used in the release
+      #     # docs/                   - user guide documentation
+      #     # examples/               - user guide code snippets
+      #     HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+
+      # - name: Upload sealed source code
+      #   uses: ./.github/actions/upload-artifact
+      #   with:
+      #     name: source-${{ steps.integrity.outputs.SOURCE_CODE_HASH }}
+      #     path: .
 
 
   # This job runs our automated test suite, complexity and security baselines
@@ -126,6 +134,7 @@ jobs:
       contents: read
     env:
       SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+      SOURCE_CODE_ARTIFACT_NAME: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
     steps:
       # NOTE: we need actions/checkout to configure git first (pre-commit hooks in make dev)
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9  # v3.5.3
@@ -133,10 +142,16 @@ jobs:
           ref: ${{ env.RELEASE_COMMIT }}
 
       - name: Restore sealed source code
-        uses: ./.github/actions/download-artifact
+        uses: ./.github/actions/seal-restore
         with:
-          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
-          path: .
+          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+
+      # - name: Restore sealed source code
+      #   uses: ./.github/actions/download-artifact
+      #   with:
+      #     name: source-${{ env.SOURCE_INTEGRITY_HASH }}
+      #     path: .
 
       - name: Debug cache restore
         run: cat pyproject.toml
@@ -164,7 +179,9 @@ jobs:
     permissions:
       contents: read
     outputs:
-      BUILD_INTEGRITY_HASH: ${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH }}
+      # BUILD_INTEGRITY_HASH: ${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH }}
+      BUILD_INTEGRITY_HASH: ${{ steps.seal_build.outputs.integrity_hash }}
+      BUILD_ARTIFACT_NAME: ${{ steps.seal_build.outputs.artifact_name }}
       ATTESTATION_HASHES: ${{ steps.encoded_hash.outputs.ATTESTATION_HASHES }}
     env:
       SOURCE_INTEGRITY_HASH: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
@@ -175,10 +192,16 @@ jobs:
           ref: ${{ env.RELEASE_COMMIT }}
 
       - name: Restore sealed source code
-        uses: ./.github/actions/download-artifact
+        uses: ./.github/actions/seal-restore
         with:
-          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
-          path: .
+          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+
+      # - name: Restore sealed source code
+      #   uses: ./.github/actions/download-artifact
+      #   with:
+      #     name: source-${{ env.SOURCE_INTEGRITY_HASH }}
+      #     path: .
 
       - name: Install poetry
         run: pipx install git+https://github.com/python-poetry/poetry@68b88e5390720a3dd84f02940ec5200bfce39ac6 # v1.5.0
@@ -191,33 +214,40 @@ jobs:
       - name: Build python package and wheel
         run: poetry build
 
-      # NOTE: Ran out of time to create a composite action out of this
-      # because GitHub Action inputs do not support arrays and it became fragile to join multiple strings then split
-      # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
-      - name: Source code tampering check
-        run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
-        env:
-          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+      # # NOTE: Ran out of time to create a composite action out of this
+      # # because GitHub Action inputs do not support arrays and it became fragile to join multiple strings then split
+      # # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
+      # - name: Source code tampering check
+      #   run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+      #   env:
+      #     CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
-      - name: Create integrity hash for build artifact
-        id: integrity
-        run: echo "BUILD_INTEGRITY_HASH=${HASH}" >> "$GITHUB_OUTPUT"
-        env:
-          # paths to hash and why they're important to protect
-          #
-          # dist/  - package distribution build
-          HASH: ${{ hashFiles('dist/**')}}
+      - name: Seal and upload
+        id: seal_build
+        uses: ./.github/actions/seal
+        with:
+          artifact_name_prefix: "build"
+          files: "dist/"
+
+      # - name: Create integrity hash for build artifact
+      #   id: integrity
+      #   run: echo "BUILD_INTEGRITY_HASH=${HASH}" >> "$GITHUB_OUTPUT"
+      #   env:
+      #     # paths to hash and why they're important to protect
+      #     #
+      #     # dist/  - package distribution build
+      #     HASH: ${{ hashFiles('dist/**')}}
 
       - name: Create attestation encoded hash for provenance
         id: encoded_hash
         working-directory: dist
         run: echo "ATTESTATION_HASHES=$(sha256sum ./* | base64 -w0)" >> "$GITHUB_OUTPUT"
 
-      - name: Upload build artifact
-        uses: ./.github/actions/upload-artifact
-        with:
-          name: build-${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH}}
-          path: dist/
+      # - name: Upload build artifact
+      #   uses: ./.github/actions/upload-artifact
+      #   with:
+      #     name: build-${{ steps.integrity.outputs.BUILD_INTEGRITY_HASH}}
+      #     path: dist/
 
   provenance:
     needs: [seal, build]
@@ -251,16 +281,22 @@ jobs:
         with:
           ref: ${{ env.RELEASE_COMMIT }}
 
-      - name: Restore sealed build
-        uses: ./.github/actions/download-artifact
+      - name: Restore sealed source code
+        uses: ./.github/actions/seal-restore
         with:
-          name: build-${{ env.BUILD_INTEGRITY_HASH }}
-          path: .
+          integrity_hash: ${{ needs.build.outputs.BUILD_INTEGRITY_HASH }}
+          artifact_name: ${{ needs.build.outputs.BUILD_ARTIFACT_NAME }}
 
-      - name: Source code tampering check
-        run: test "${BUILD_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
-        env:
-          CURRENT_HASH: ${{ hashFiles('dist/**')}}
+      # - name: Restore sealed build
+      #   uses: ./.github/actions/download-artifact
+      #   with:
+      #     name: build-${{ env.BUILD_INTEGRITY_HASH }}
+      #     path: .
+
+      # - name: Source code tampering check
+      #   run: test "${BUILD_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+      #   env:
+      #     CURRENT_HASH: ${{ hashFiles('dist/**')}}
 
       # - name: Upload to PyPi prod
       #   if: ${{ !inputs.skip_pypi }}
@@ -292,18 +328,24 @@ jobs:
           ref: ${{ env.RELEASE_COMMIT }}
 
       - name: Restore sealed source code
-        uses: ./.github/actions/download-artifact
+        uses: ./.github/actions/seal-restore
         with:
-          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
-          path: .
+          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+
+      # - name: Restore sealed source code
+      #   uses: ./.github/actions/download-artifact
+      #   with:
+      #     name: source-${{ env.SOURCE_INTEGRITY_HASH }}
+      #     path: .
 
       # NOTE: Ran out of time to create a composite action out of this
       # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
       # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
-      - name: Source code tampering check
-        run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
-        env:
-          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+      # - name: Source code tampering check
+      #   run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+      #   env:
+      #     CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
       - id: setup-git
         name: Git client setup and refresh tip
@@ -346,18 +388,24 @@ jobs:
           ref: ${{ env.RELEASE_COMMIT }}
 
       - name: Restore sealed source code
-        uses: ./.github/actions/download-artifact
+        uses: ./.github/actions/seal-restore
         with:
-          name: source-${{ env.SOURCE_INTEGRITY_HASH }}
-          path: .
+          integrity_hash: ${{ needs.seal.outputs.SOURCE_CODE_HASH }}
+          artifact_name: ${{ needs.seal.outputs.SOURCE_CODE_ARTIFACT_NAME }}
+
+      # - name: Restore sealed source code
+      #   uses: ./.github/actions/download-artifact
+      #   with:
+      #     name: source-${{ env.SOURCE_INTEGRITY_HASH }}
+      #     path: .
 
       # NOTE: Ran out of time to create a composite action out of this
       # because GitHub Action inputs do not support arrays and it became fragile when making it reusable with strings
       # keeping these hard coded for now until we have a cleaner way to reuse files/dirs we want to hash
-      - name: Source code tampering check
-        run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
-        env:
-          CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
+      # - name: Source code tampering check
+      #   run: test "${SOURCE_INTEGRITY_HASH}" = "${CURRENT_HASH}" || exit 1
+      #   env:
+      #     CURRENT_HASH: ${{ hashFiles('aws_lambda_powertools/**', 'pyproject.toml', 'poetry.lock', 'layer/**', '.github/**', 'docs/**', 'examples/**')}}
 
       - name: Create PR
         id: create-pr
