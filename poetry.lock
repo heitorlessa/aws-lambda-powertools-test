@@ -1526,13 +1526,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-s3"
-version = "1.28.0"
-description = "Type annotations for boto3.S3 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.3.post1"
+description = "Type annotations for boto3.S3 1.28.3 service generated with mypy-boto3-builder 7.14.7"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-s3-1.28.0.tar.gz", hash = "sha256:27867ca325a845700a008f3fca995006b32f2e0d18afe676352b49453f477d69"},
-    {file = "mypy_boto3_s3-1.28.0-py3-none-any.whl", hash = "sha256:789a32560ec1882e3a2c5bbb7aa97952b05e54507e2174eab6535ceaffb04cee"},
+    {file = "mypy-boto3-s3-1.28.3.post1.tar.gz", hash = "sha256:a70f0f128791cf4a359adda4d4f0234efc94a9deb98d42ab5c595b1d5c1994fa"},
+    {file = "mypy_boto3_s3-1.28.3.post1-py3-none-any.whl", hash = "sha256:6b5723691c7fd11216f3fcbacc6af3c43c59a3ca74a4bd9aa1fc6fcbf4a538c5"},
 ]
 
 [package.dependencies]
@@ -1540,13 +1540,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-secretsmanager"
-version = "1.28.0"
-description = "Type annotations for boto3.SecretsManager 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.3.post1"
+description = "Type annotations for boto3.SecretsManager 1.28.3 service generated with mypy-boto3-builder 7.14.7"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-secretsmanager-1.28.0.tar.gz", hash = "sha256:ee2341a09370209b9ed5d96488baf831b1487c931f420fa5f9cf4a18b2e46311"},
-    {file = "mypy_boto3_secretsmanager-1.28.0-py3-none-any.whl", hash = "sha256:160a5bf3cf9b45201f17920472403ed98cdc65256914b167f0539f76e509dbdf"},
+    {file = "mypy-boto3-secretsmanager-1.28.3.post1.tar.gz", hash = "sha256:783edfa92055aa608517f6890bd2ced225cfb3b2ebd0ef481a9b90128101a22b"},
+    {file = "mypy_boto3_secretsmanager-1.28.3.post1-py3-none-any.whl", hash = "sha256:f64a31f76e69ed444620e9ae36502f089b28d18ea3b147d08c62228ba4c1566b"},
 ]
 
 [package.dependencies]
@@ -2749,4 +2749,4 @@ validation = ["fastjsonschema"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7.4"
-content-hash = "85c26ffbf49fbfeaa6d43f9dd523f379c8b3ffd99f60070f7ddb5ead0b525749"
+content-hash = "c6922a69e54a499556b9d2c7ddab4146984fc46363fe1850e6d0e5e12ac7c987"
