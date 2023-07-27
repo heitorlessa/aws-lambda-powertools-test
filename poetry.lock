@@ -1428,13 +1428,13 @@ reports = ["lxml"]
 
 [[package]]
 name = "mypy-boto3-appconfig"
-version = "1.28.0"
-description = "Type annotations for boto3.AppConfig 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.AppConfig 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-appconfig-1.28.0.tar.gz", hash = "sha256:753044339ce1da00e0b60f387ed957013712ab69ca51a9b56859a4ae502c806a"},
-    {file = "mypy_boto3_appconfig-1.28.0-py3-none-any.whl", hash = "sha256:5708545675610ceb686339e90f4d6f8276f9e2ad2f15db2833ebc593185708f5"},
+    {file = "mypy-boto3-appconfig-1.28.12.tar.gz", hash = "sha256:02080219c25b7d7837257d070109ba1fe55cd281eb1f8115ca94556d25453e29"},
+    {file = "mypy_boto3_appconfig-1.28.12-py3-none-any.whl", hash = "sha256:4796bdae21a86de03198c181e514875287b2cbac46a7718d25128cb61c457f0a"},
 ]
 
 [package.dependencies]
@@ -1442,13 +1442,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-appconfigdata"
-version = "1.28.0"
-description = "Type annotations for boto3.AppConfigData 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.AppConfigData 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-appconfigdata-1.28.0.tar.gz", hash = "sha256:1f0331fcb6642c44d335d08250ee5abcd840030304d480adf85ea017ba941bb4"},
-    {file = "mypy_boto3_appconfigdata-1.28.0-py3-none-any.whl", hash = "sha256:c01ecbbda949497dbb650cc761915a7e14b621db5bc20cc1fd3f49620e74c9bc"},
+    {file = "mypy-boto3-appconfigdata-1.28.12.tar.gz", hash = "sha256:b03bf529d366dd4e3deb2bb096049abfdb903381fb3382f3995be8fac6d48680"},
+    {file = "mypy_boto3_appconfigdata-1.28.12-py3-none-any.whl", hash = "sha256:20c30fef5769479e0ae9ba1726aa15621875523a2a8e3d729db4964f110c1d04"},
 ]
 
 [package.dependencies]
@@ -1456,13 +1456,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-cloudformation"
-version = "1.28.0"
-description = "Type annotations for boto3.CloudFormation 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.CloudFormation 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-cloudformation-1.28.0.tar.gz", hash = "sha256:0d2ead02c352bc97ae59b65ae8b00d5ce186435b7cf5736213a52f58df192511"},
-    {file = "mypy_boto3_cloudformation-1.28.0-py3-none-any.whl", hash = "sha256:99d5db7d6b220ba016757670a917bdfdab1c475593153833ed6c5cdd9a9aa9ba"},
+    {file = "mypy-boto3-cloudformation-1.28.12.tar.gz", hash = "sha256:2a276c52a4907d5f0b111a5fd0d880b20d188905cd8b672cde5ac46363a8b3fa"},
+    {file = "mypy_boto3_cloudformation-1.28.12-py3-none-any.whl", hash = "sha256:7b16b8a3000f9dff13ead9edcebd34ee19e2130d213ecf05b371e02048f1a7a3"},
 ]
 
 [package.dependencies]
@@ -1470,13 +1470,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-cloudwatch"
-version = "1.28.0"
-description = "Type annotations for boto3.CloudWatch 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.CloudWatch 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-cloudwatch-1.28.0.tar.gz", hash = "sha256:c34cc45c8a57702e11cf38de590af447d90cd3ea68328ea2908452d8a09d471a"},
-    {file = "mypy_boto3_cloudwatch-1.28.0-py3-none-any.whl", hash = "sha256:8812c6120111798f84b2e1fe5808aae1f5766c183746ea336dec14f9bdf3308b"},
+    {file = "mypy-boto3-cloudwatch-1.28.12.tar.gz", hash = "sha256:c3205f75845a6b9aff313f2e74e1f5e4b7462772946da9c27cf0fa09194f83b9"},
+    {file = "mypy_boto3_cloudwatch-1.28.12-py3-none-any.whl", hash = "sha256:d81da96bc035265a53a72ff813250ae19af12a404f24adb86fcc1376c42de441"},
 ]
 
 [package.dependencies]
@@ -1484,13 +1484,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-dynamodb"
-version = "1.28.0"
-description = "Type annotations for boto3.DynamoDB 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.DynamoDB 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-dynamodb-1.28.0.tar.gz", hash = "sha256:d12ed66edd7ded7089297b533d77e8b8ed8844da4e097cd912b61a08bfe4948b"},
-    {file = "mypy_boto3_dynamodb-1.28.0-py3-none-any.whl", hash = "sha256:622f3d14dc1835a17ca511672d2f8fd08c03c4930f2845d06d1632b9f0c92aaf"},
+    {file = "mypy-boto3-dynamodb-1.28.12.tar.gz", hash = "sha256:a201c983a36b336561558d5116bd32dd3e20888cf51ccdb4dae81fc203d34bef"},
+    {file = "mypy_boto3_dynamodb-1.28.12-py3-none-any.whl", hash = "sha256:67862ae79d2304298d4730edd264d2b0b4dd2bf246eca9fec1e9bccecd3cca90"},
 ]
 
 [package.dependencies]
@@ -1498,13 +1498,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-lambda"
-version = "1.28.0"
-description = "Type annotations for boto3.Lambda 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.Lambda 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-lambda-1.28.0.tar.gz", hash = "sha256:a3abaf98e514f2cabed2cf0b1e77c94c81f0fbbba8a549b3c073577a9f9ac196"},
-    {file = "mypy_boto3_lambda-1.28.0-py3-none-any.whl", hash = "sha256:5fd38df6418829b2f3a184918fc8ad1d49b6738509f1832cdc71f33588efbdfb"},
+    {file = "mypy-boto3-lambda-1.28.12.tar.gz", hash = "sha256:c0e8e276350d3d9fd2e6ad3711a1f292bbec617251f575b6edc7c11dbf12b2d3"},
+    {file = "mypy_boto3_lambda-1.28.12-py3-none-any.whl", hash = "sha256:3e2c31ecb7caa820827bf330f13fda3e98fe8eb94f1710fb673e35570242d2e4"},
 ]
 
 [package.dependencies]
@@ -1512,13 +1512,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-logs"
-version = "1.28.1"
-description = "Type annotations for boto3.CloudWatchLogs 1.28.1 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.CloudWatchLogs 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-logs-1.28.1.tar.gz", hash = "sha256:e0278a977d68c15120c0f2f4a85b46d0ca3e17c676c7d218dbbb3cfa1b4c8ef1"},
-    {file = "mypy_boto3_logs-1.28.1-py3-none-any.whl", hash = "sha256:0ab3b7b39f1c3b0d530096fe2bfb9df09b989b0ea718e5ecbf823c32b016e319"},
+    {file = "mypy-boto3-logs-1.28.12.tar.gz", hash = "sha256:776b84c0dab03b2b1d16b65792a10e577bf9e36fa44af2a2a20f8adb6f1608a1"},
+    {file = "mypy_boto3_logs-1.28.12-py3-none-any.whl", hash = "sha256:d61490f4ced9e2a0673a526cb129ce4f75fa55198a84c0fa64a04da95d1e43b7"},
 ]
 
 [package.dependencies]
@@ -1526,13 +1526,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-s3"
-version = "1.28.0"
-description = "Type annotations for boto3.S3 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.S3 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-s3-1.28.0.tar.gz", hash = "sha256:27867ca325a845700a008f3fca995006b32f2e0d18afe676352b49453f477d69"},
-    {file = "mypy_boto3_s3-1.28.0-py3-none-any.whl", hash = "sha256:789a32560ec1882e3a2c5bbb7aa97952b05e54507e2174eab6535ceaffb04cee"},
+    {file = "mypy-boto3-s3-1.28.12.tar.gz", hash = "sha256:7d54b03e0bd72cc1fe690efdce9eeac9e2855dfbafa15390a0f518cae9e280d2"},
+    {file = "mypy_boto3_s3-1.28.12-py3-none-any.whl", hash = "sha256:aceb69305c3e0af831d9a14314ea0afa9c93a9c393af25ea6a08fbc5ba350afd"},
 ]
 
 [package.dependencies]
@@ -1540,13 +1540,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-secretsmanager"
-version = "1.28.0"
-description = "Type annotations for boto3.SecretsManager 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.SecretsManager 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-secretsmanager-1.28.0.tar.gz", hash = "sha256:ee2341a09370209b9ed5d96488baf831b1487c931f420fa5f9cf4a18b2e46311"},
-    {file = "mypy_boto3_secretsmanager-1.28.0-py3-none-any.whl", hash = "sha256:160a5bf3cf9b45201f17920472403ed98cdc65256914b167f0539f76e509dbdf"},
+    {file = "mypy-boto3-secretsmanager-1.28.12.tar.gz", hash = "sha256:f4d353549c7078b85a9174559f49cf39ef4ac67a25f2bc830f0e611455cb7ff1"},
+    {file = "mypy_boto3_secretsmanager-1.28.12-py3-none-any.whl", hash = "sha256:94ce82843f4c02a7992dde707ca3378ad8ac13dd6eda947050a8638efd4e4f62"},
 ]
 
 [package.dependencies]
@@ -1554,13 +1554,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-ssm"
-version = "1.28.0"
-description = "Type annotations for boto3.SSM 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.SSM 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-ssm-1.28.0.tar.gz", hash = "sha256:15482d2bff7995230549d145547f0ea92d01b68716aa25297e2a2da015922309"},
-    {file = "mypy_boto3_ssm-1.28.0-py3-none-any.whl", hash = "sha256:e6ac60818c807baeeb0ef6714832c23904f2ed463fc40133059e2f63abd432fa"},
+    {file = "mypy-boto3-ssm-1.28.12.tar.gz", hash = "sha256:78b4cef65e18ae6714022d95955a51208a1614ca2dc6757735c9527c96cd7c14"},
+    {file = "mypy_boto3_ssm-1.28.12-py3-none-any.whl", hash = "sha256:5576d651129cdef275f2dcf7d20dd6df17e45d1534e5020e7a1aac32227215d8"},
 ]
 
 [package.dependencies]
@@ -1568,13 +1568,13 @@ typing-extensions = {version = ">=4.1.0", markers = "python_version < \"3.9\""}
 
 [[package]]
 name = "mypy-boto3-xray"
-version = "1.28.0"
-description = "Type annotations for boto3.XRay 1.28.0 service generated with mypy-boto3-builder 7.14.5"
+version = "1.28.12"
+description = "Type annotations for boto3.XRay 1.28.12 service generated with mypy-boto3-builder 7.15.2"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "mypy-boto3-xray-1.28.0.tar.gz", hash = "sha256:8ce07598f7eeabe66e8dc8cb7e906efb96198b9102f58e9315e6daf166abf3e7"},
-    {file = "mypy_boto3_xray-1.28.0-py3-none-any.whl", hash = "sha256:64cd601a829c274665b977853f85b27464986e9eec1ebc03f5bc4530a400b2f6"},
+    {file = "mypy-boto3-xray-1.28.12.tar.gz", hash = "sha256:88485fac6b070254aa7305efe50fe7b72c8fe6f18db2dd811497b0071d12729f"},
+    {file = "mypy_boto3_xray-1.28.12-py3-none-any.whl", hash = "sha256:489ea65077897c50b32b2240bd6660e5199c27feb14d3fa7bbcc1872ef0bd702"},
 ]
 
 [package.dependencies]
@@ -2749,4 +2749,4 @@ validation = ["fastjsonschema"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.7.4"
-content-hash = "85c26ffbf49fbfeaa6d43f9dd523f379c8b3ffd99f60070f7ddb5ead0b525749"
+content-hash = "20f3ebfc8669a9709f380547b536512e85322e97b6e347df1a80ce1bb43c906a"
